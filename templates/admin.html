@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/admin.css">
+    <title>관리자 패널 · DevBoard</title>
+</head>
+<body>
+    <div class="admin-topbar">
+        <div class="admin-topbar-left">
+            <a href="/main" class="admin-logo">💻 DevBoard</a>
+            <span class="admin-badge">🛡️ 관리자</span>
+        </div>
+        <div class="admin-topbar-right">
+            <div class="dm-wrap" id="dmWrap">
+                <button class="dm-topbar-btn" id="dmBtn" title="DM">💬<span class="dm-unread-badge hidden" id="dmBadge"></span></button>
+            </div>
+            <div class="notif-wrap" id="notifWrap">
+                <button class="bell-btn" id="bellBtn" title="알림">🔔<span class="notif-badge hidden" id="notifBadge"></span></button>
+                <div class="notif-dropdown hidden" id="notifDropdown"></div>
+            </div>
+            <button class="darkmode-btn" id="darkToggle" title="다크모드">🌙</button>
+            <span class="admin-user">👋 {{ user_id }}님</span>
+            <a href="/logout" class="admin-logout-btn">로그아웃</a>
+        </div>
+    </div>
+
+    <!-- ── DM 패널 ── -->
+    <div class="dm-panel" id="dmPanel">
+        <div class="dm-panel-header">
+            <button class="dm-back-btn hidden" id="dmBackBtn">←</button>
+            <span class="dm-panel-title" id="dmPanelTitle">💬 메시지</span>
+            <button class="dm-panel-close" id="dmPanelClose">✕</button>
+        </div>
+        <div class="dm-panel-body" id="dmPanelBody">
+            <div class="dm-empty">대화 내용이 없습니다</div>
+        </div>
+        <div class="dm-input-area hidden" id="dmInputArea">
+            <input type="text" class="dm-input" id="dmInput" placeholder="메시지를 입력하세요..." maxlength="500">
+            <button class="dm-send-btn" id="dmSendBtn">↑</button>
+        </div>
+    </div>
+
+    <div class="admin-layout">
+        <!-- 사이드바 -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-menu">
+                <button class="sidebar-item active" data-tab="notices">
+                    <span class="sidebar-icon">📋</span>
+                    <span>공지 관리</span>
+                </button>
+                <button class="sidebar-item" data-tab="users">
+                    <span class="sidebar-icon">👥</span>
+                    <span>회원 관리</span>
+                    <span class="sidebar-count" id="userCount">-</span>
+                </button>
+                <button class="sidebar-item" data-tab="members">
+                    <span class="sidebar-icon">🧑‍🤝‍🧑</span>
+                    <span>가입자 보기</span>
+                </button>
+                <button class="sidebar-item" data-tab="messages">
+                    <span class="sidebar-icon">💬</span>
+                    <span>메시지 관리</span>
+                    <span class="sidebar-count" id="msgCount">-</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- 메인 콘텐츠 -->
+        <main class="admin-main">
+
+            <!-- ── 공지 관리 탭 ── -->
+            <section class="admin-tab active" id="tab-notices">
+                <div class="tab-header">
+                    <div>
+                        <h2 class="tab-title">📋 공지 관리</h2>
+                        <p class="tab-sub">공지사항을 작성하고 관리합니다</p>
+                    </div>
+                    {% if is_superadmin %}<button class="btn-primary" id="newNoticeBtn">+ 새 공지 작성</button>{% endif %}
+                </div>
+                <div class="notice-list" id="noticeList">
+                    <div class="admin-loading">불러오는 중...</div>
+                </div>
+            </section>
+
+            <!-- ── 회원 관리 탭 ── -->
+            <section class="admin-tab" id="tab-users">
+                <div class="tab-header">
+                    <div>
+                        <h2 class="tab-title">👥 회원 관리</h2>
+                        <p class="tab-sub">가입된 회원을 확인하고 관리합니다</p>
+                    </div>
+                    <div class="user-search-wrap">
+                        <input type="text" class="user-search-input" id="userSearchInput" placeholder="닉네임·아이디 검색...">
+                    </div>
+                </div>
+                <div class="user-table-wrap">
+                    <table class="user-table">
+                        <thead>
+                            <tr>
+                                <th>닉네임</th>
+                                <th>아이디</th>
+                                <th>구인글</th>
+                                <th>팀</th>
+                                <th>상태</th>
+                                <th>관리자</th>
+                                <th>액션</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody">
+                            <tr><td colspan="7" class="admin-loading">불러오는 중...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            <!-- ── 가입자 보기 탭 ── -->
+            <section class="admin-tab" id="tab-members">
+                <div class="tab-header">
+                    <div>
+                        <h2 class="tab-title">🧑‍🤝‍🧑 가입자 보기</h2>
+                        <p class="tab-sub">가입된 모든 멤버를 확인하고 DM을 보낼 수 있습니다</p>
+                    </div>
+                </div>
+                <div class="members-grid" id="membersGrid">
+                    <div class="admin-loading">불러오는 중...</div>
+                </div>
+            </section>
+
+            <!-- ── 메시지 관리 탭 ── -->
+            <section class="admin-tab" id="tab-messages">
+                <div class="tab-header">
+                    <div>
+                        <h2 class="tab-title">💬 메시지 관리</h2>
+                        <p class="tab-sub">모든 DM 메시지를 확인하고 삭제할 수 있습니다</p>
+                    </div>
+                    <div class="user-search-wrap">
+                        <input type="text" class="user-search-input" id="msgSearchInput" placeholder="닉네임·내용 검색...">
+                    </div>
+                </div>
+                <div class="user-table-wrap">
+                    <table class="user-table" id="msgTable">
+                        <thead>
+                            <tr>
+                                <th>보낸 사람</th>
+                                <th>받는 사람</th>
+                                <th>내용</th>
+                                <th>시간</th>
+                                <th>삭제</th>
+                            </tr>
+                        </thead>
+                        <tbody id="msgTableBody">
+                            <tr><td colspan="5" class="admin-loading">불러오는 중...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- ── 공지 작성/수정 모달 ── -->
+    <div class="modal-overlay hidden" id="noticeModalOverlay">
+        <div class="modal admin-modal">
+            <div class="modal-header">
+                <h2 id="noticeModalTitle">새 공지 작성</h2>
+                <button class="modal-close" id="noticeModalClose">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="noticeForm">
+                    <div class="form-group">
+                        <label>제목 <span class="req">*</span></label>
+                        <input type="text" id="noticeTitle" placeholder="공지 제목을 입력하세요" maxlength="100">
+                    </div>
+                    <div class="form-group">
+                        <label>내용 <span class="req">*</span></label>
+                        <textarea id="noticeContent" placeholder="공지 내용을 입력하세요" rows="8"></textarea>
+                    </div>
+                    <div class="form-group pin-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="noticePinned">
+                            <span>📌 상단 고정</span>
+                        </label>
+                    </div>
+                    <div class="form-error hidden" id="noticeFormError"></div>
+                    <div class="modal-footer-btns">
+                        <button type="button" class="btn-secondary" id="noticeModalCancelBtn">취소</button>
+                        <button type="submit" class="btn-primary" id="noticeSubmitBtn">등록하기</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── 잠금 모달 ── -->
+    <div class="modal-overlay hidden" id="lockModalOverlay">
+        <div class="modal admin-modal small-modal">
+            <div class="modal-header">
+                <h2>계정 잠금</h2>
+                <button class="modal-close" id="lockModalClose">✕</button>
+            </div>
+            <div class="modal-body">
+                <p class="lock-target-name" id="lockTargetName"></p>
+                <div class="lock-options">
+                    <button class="lock-opt-btn" data-min="30">30분</button>
+                    <button class="lock-opt-btn" data-min="60">1시간</button>
+                    <button class="lock-opt-btn" data-min="720">12시간</button>
+                    <button class="lock-opt-btn" data-min="1440">24시간</button>
+                    <button class="lock-opt-btn" data-min="10080">7일</button>
+                    <button class="lock-opt-btn" data-min="999999">영구</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>const CURRENT_ADMIN_ID = {{ current_user | tojson }}; const IS_SUPERADMIN = {{ is_superadmin | tojson }}; const IS_OWNER = {{ is_owner | tojson }};</script>
+    <script src="/static/js/dm.js"></script>
+    <script src="/static/js/admin.js"></script>
+    <script>
+        // ── 다크모드 ──
+        const darkToggle = document.getElementById('darkToggle');
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark');
+            darkToggle.textContent = '☀️';
+        }
+        darkToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            darkToggle.textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        });
+
+        // ── 알림 ──
+        function escH(str) { const d=document.createElement('div'); d.textContent=str; return d.innerHTML; }
+        function timeAgoA(ts) {
+            const s = Math.floor(Date.now()/1000 - ts);
+            if (s < 60) return '방금 전';
+            if (s < 3600) return Math.floor(s/60) + '분 전';
+            if (s < 86400) return Math.floor(s/3600) + '시간 전';
+            return Math.floor(s/86400) + '일 전';
+        }
+        const bellBtn = document.getElementById('bellBtn');
+        const notifBadge = document.getElementById('notifBadge');
+        const notifDropdown = document.getElementById('notifDropdown');
+
+        async function loadNotifications() {
+            try {
+                const res = await fetch('/api/notifications');
+                const data = await res.json();
+                if (data.unread > 0) {
+                    notifBadge.textContent = data.unread > 9 ? '9+' : data.unread;
+                    notifBadge.classList.remove('hidden');
+                } else {
+                    notifBadge.classList.add('hidden');
+                }
+                notifDropdown.innerHTML = '';
+                if (!data.notifications.length) {
+                    notifDropdown.innerHTML = '<div class="notif-empty">알림이 없습니다</div>';
+                } else {
+                    data.notifications.forEach(n => {
+                        const row = document.createElement('div');
+                        row.className = `notif-row${n.is_read ? '' : ' notif-unread'}`;
+                        const isView = n.notif_type === 'view';
+                        const icon = isView ? '👀' : '👋';
+                        const msg = isView
+                            ? `<b>${escH(n.sender_nickname)}</b>님이 <b>${escH(n.profile_name)}</b> 프로필을 조회했습니다`
+                            : `<b>${escH(n.sender_nickname)}</b>님이 <b>${escH(n.profile_name)}</b>에 구인 신청을 보냈습니다`;
+                        row.innerHTML = `<div class="notif-icon">${icon}</div><div class="notif-info"><div class="notif-msg">${msg}</div><div class="notif-time">${timeAgoA(n.created_at)}</div></div>`;
+                        notifDropdown.appendChild(row);
+                    });
+                }
+            } catch {}
+        }
+
+        bellBtn.addEventListener('click', async e => {
+            e.stopPropagation();
+            if (!notifDropdown.classList.contains('hidden')) {
+                notifDropdown.classList.add('hidden'); return;
+            }
+            await loadNotifications();
+            notifDropdown.classList.remove('hidden');
+            if (!notifBadge.classList.contains('hidden')) {
+                fetch('/api/notifications/read-all', {method:'POST'}).then(() => notifBadge.classList.add('hidden'));
+            }
+        });
+        document.addEventListener('click', e => {
+            if (!document.getElementById('notifWrap').contains(e.target))
+                notifDropdown.classList.add('hidden');
+        });
+        loadNotifications();
+        setInterval(loadNotifications, 15000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/notif.css">
+    <title>홈</title>
+</head>
+<body>
+    <div class="toast" id="toast">✅ 로그인에 성공했습니다!</div>
+
+    <button class="scroll-top-btn" id="scrollTopBtn" title="맨 위로">⬆️</button>
+
+    <div class="topbar fade-up" style="--fu-delay:0s">
+        <div class="topbar-left">
+            <a href="/main" class="site-logo">💻 DevBoard</a>
+            <span class="welcome">👋 {{ user_id }}님</span>
+        </div>
+        <nav class="topbar-nav">
+            <a href="/recruit" class="nav-link" id="navRecruit">구인 게시판<span class="new-dot hidden" id="dotRecruit"></span></a>
+            <a href="/notice" class="nav-link" id="navNotice">공지사항<span class="new-dot hidden" id="dotNotice"></span></a>
+            <a href="/members" class="nav-link">멤버 보기</a>
+        </nav>
+        <div class="topbar-center">
+            <div class="search-wrap" id="searchWrap">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-input" placeholder="닉네임으로 검색..." id="searchInput" autocomplete="off">
+                <div class="search-dropdown hidden" id="searchDropdown"></div>
+            </div>
+        </div>
+        <div class="topbar-right">
+            <div class="dm-wrap" id="dmWrap">
+                <button class="dm-topbar-btn" id="dmBtn" title="DM">💬<span class="dm-unread-badge hidden" id="dmBadge"></span></button>
+            </div>
+            <div class="notif-wrap" id="notifWrap">
+                <button class="bell-btn" id="bellBtn">🔔<span class="notif-badge hidden" id="notifBadge"></span></button>
+            </div>
+            <button class="darkmode-btn" title="다크모드" id="darkToggle">🌙</button>
+            {% if is_admin %}
+            <a href="/admin" class="admin-link-btn">🛡️ 관리자</a>
+            {% endif %}
+            {% if user_id == '게스트' %}
+            <a href="/login_page" class="login-hint-btn">로그인이 안되어있다면?</a>
+            {% else %}
+            <a href="/user/{{ raw_user_id }}" class="settings-btn">👤 내 프로필</a>
+            <a href="/logout" class="logout-btn">로그아웃</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="content">
+        <h1 class="typing-text fade-up" id="typingText" style="--fu-delay:0.08s"></h1>
+        <div class="nav-menu">
+            <a href="/recruit" class="nav-btn fade-up" id="btnRecruit" style="--fu-delay:0.18s">
+                <span>👥</span>
+                <span>구인 게시판</span>
+                <span class="nav-btn-new hidden" id="btnDotRecruit">NEW</span>
+            </a>
+            <a href="/notice" class="nav-btn fade-up" id="btnNotice" style="--fu-delay:0.24s">
+                <span>📋</span>
+                <span>공지사항</span>
+                <span class="nav-btn-new hidden" id="btnDotNotice">NEW</span>
+            </a>
+        </div>
+        <div class="stats-section">
+            <a href="/members" class="stat-card fade-up" style="text-decoration:none; --fu-delay:0.32s">
+                <span class="stat-num" id="statUsers">-</span>
+                <span class="stat-label">👤 가입자</span>
+            </a>
+            <div class="stat-card fade-up" style="--fu-delay:0.38s">
+                <span class="stat-num" id="statProfiles">-</span>
+                <span class="stat-label">🔍 구인 등록</span>
+            </div>
+        </div>
+    </div>
+    <div class="footer-spacer">
+        <section class="intro-section">
+            <div class="intro-grid">
+                <!-- 왼쪽 큰 카드 -->
+                <div class="intro-card intro-card-large">
+                    <div class="intro-img-wrap">
+                        <div class="intro-img-placeholder large">
+                            <span>💻</span>
+                            <span class="intro-img-label">DevBoard</span>
+                        </div>
+                    </div>
+                    <div class="intro-desc">
+                        <h2 class="intro-title">개발자들을 위한 협업 플랫폼</h2>
+                        <p>DevBoard는 개발에 관심 있는 학생들이 팀원을 찾고, 프로젝트를 함께 시작할 수 있도록 돕는 커뮤니티입니다. 구인 게시판에서 팀원을 모집하거나, 팀 게시판에서 팀을 만들어보세요.</p>
+                    </div>
+                </div>
+                <!-- 오른쪽 카드 2개 -->
+                <div class="intro-col">
+                    <a href="/recruit?tab=recruit" class="intro-card intro-card-small">
+                        <div class="intro-img-wrap">
+                            <div class="intro-img-placeholder small">
+                                <span>👥</span>
+                            </div>
+                        </div>
+                        <div class="intro-desc">
+                            <h3 class="intro-title">구인 게시판</h3>
+                            <p>내 프로필을 등록하거나 마음에 드는 개발자에게 바로 DM을 보내 팀을 구성해보세요.</p>
+                        </div>
+                    </a>
+                    <a href="/recruit?tab=team" class="intro-card intro-card-small">
+                        <div class="intro-img-wrap">
+                            <div class="intro-img-placeholder small">
+                                <span>🚀</span>
+                            </div>
+                        </div>
+                        <div class="intro-desc">
+                            <h3 class="intro-title">팀 게시판</h3>
+                            <p>팀을 직접 만들고 팀원을 모집하세요. 분야별로 팀을 찾아 프로젝트를 함께 시작할 수 있습니다.</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </section>
+    </div>
+    <footer class="footer">
+        <div class="footer-item">
+            <span class="footer-label">버그제보</span>
+            <span class="footer-link">1106김도완</span>
+        </div>
+
+        <div class="footer-item">
+            <span class="footer-label">오픈소스</span>
+            <a class="footer-link" href="https://github.com/dowan1220-ai/DevBoard" target="_blank" rel="noopener">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:4px;"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>코드링크
+            </a>
+        </div>
+    </footer>
+
+    <!-- ────── DM 패널 ────── -->
+    <div class="dm-panel" id="dmPanel">
+        <div class="dm-panel-header">
+            <button class="dm-back-btn hidden" id="dmBackBtn">←</button>
+            <span class="dm-panel-title" id="dmPanelTitle">💬 메시지</span>
+            <button class="dm-panel-close" id="dmPanelClose">✕</button>
+        </div>
+        <div class="dm-panel-body" id="dmPanelBody">
+            <div class="dm-empty">대화 내용이 없습니다</div>
+        </div>
+        <div class="dm-input-area hidden" id="dmInputArea">
+            <input type="text" class="dm-input" id="dmInput" placeholder="메시지를 입력하세요..." maxlength="500">
+            <button class="dm-send-btn" id="dmSendBtn">↑</button>
+        </div>
+    </div>
+
+    <script src="/static/js/dm.js"></script>
+    <script src="/static/js/notif.js"></script>
+    <script>
+        {% if show_toast %}
+        const toast = document.getElementById('toast');
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+        {% endif %}
+
+        // 타이핑 효과
+        const texts = [
+            '함께 성장하는 대구 소마고 개발자 커뮤니티',
+            '같이 공부할 팀원을 찾아보세요!',
+            '코딩은 혼자보다 함께!'
+        ];
+        let textIndex = 0;
+        let charIndex = 0;
+        let isDeleting = false;
+        const el = document.getElementById('typingText');
+
+        function type() {
+            const current = texts[textIndex];
+
+            if (!isDeleting) {
+                el.textContent = current.slice(0, charIndex + 1);
+                charIndex++;
+                if (charIndex === current.length) {
+                    isDeleting = true;
+                    setTimeout(type, 1500);   // 다 쓴 후 잠깐 대기
+                    return;
+                }
+            } else {
+                el.textContent = current.slice(0, charIndex - 1);
+                charIndex--;
+                if (charIndex === 0) {
+                    isDeleting = false;
+                    textIndex = (textIndex + 1) % texts.length;
+                    setTimeout(type, 400);    // 다음 문장 전 잠깐 대기
+                    return;
+                }
+            }
+            setTimeout(type, isDeleting ? 50 : 80);
+        }
+
+        type();
+
+        // 맨 위로 버튼
+        const scrollTopBtn = document.getElementById('scrollTopBtn');
+        window.addEventListener('scroll', () => {
+            scrollTopBtn.classList.toggle('visible', window.scrollY > 300);
+        });
+        scrollTopBtn.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // 활동 통계
+        fetch('/api/stats').then(r => r.json()).then(data => {
+            document.getElementById('statUsers').textContent = data.users ?? '-';
+            document.getElementById('statProfiles').textContent = data.profiles ?? '-';
+        }).catch(() => {});
+
+        // 닉네임 검색
+        const searchInput  = document.getElementById('searchInput');
+        const searchDropdown = document.getElementById('searchDropdown');
+        let searchTimer = null;
+
+        function escapeHtml(str) {
+            const d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+        function highlight(text, q) {
+            const escaped = escapeHtml(text);
+            const pattern = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
+            return escaped.replace(pattern, '<mark>$1</mark>');
+        }
+        function closeSearchDrop() {
+            searchDropdown.classList.add('hidden');
+        }
+        function renderSearchDrop(results, q) {
+            if (!results.length) {
+                searchDropdown.innerHTML = '<div class="search-drop-empty">검색 결과가 없습니다</div>';
+            } else {
+                searchDropdown.innerHTML = '';
+                results.forEach(u => {
+                    const row = document.createElement('div');
+                    row.className = 'search-drop-row';
+                    const avatarColor = ['#667eea','#f093fb','#4facfe','#43e97b','#fa709a'][u.nickname.charCodeAt(0) % 5];
+                    row.innerHTML = `
+                        <div class="search-drop-avatar" style="background:${avatarColor};">${escapeHtml(u.nickname.charAt(0))}</div>
+                        <div class="search-drop-info">
+                            <div class="search-drop-name">${highlight(u.nickname, q)}</div>
+                            <div class="search-drop-sub">프로필 보기 →</div>
+                        </div>`;
+                    row.addEventListener('click', () => {
+                        window.location.href = `/user/${encodeURIComponent(u.username)}`;
+                    });
+                    searchDropdown.appendChild(row);
+                });
+            }
+            searchDropdown.classList.remove('hidden');
+        }
+
+        searchInput.addEventListener('input', () => {
+            const q = searchInput.value.trim();
+            clearTimeout(searchTimer);
+            if (!q) { closeSearchDrop(); return; }
+            searchTimer = setTimeout(async () => {
+                try {
+                    const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+                    const data = await res.json();
+                    renderSearchDrop(data.results, q);
+                } catch { closeSearchDrop(); }
+            }, 180);
+        });
+        searchInput.addEventListener('keydown', async e => {
+            if (e.key === 'Escape') { searchInput.value = ''; closeSearchDrop(); return; }
+            if (e.key === 'Enter' && !e.isComposing) {
+                e.preventDefault();
+                const q = searchInput.value.trim();
+                if (!q) return;
+                clearTimeout(searchTimer);
+                try {
+                    const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+                    const data = await res.json();
+                    if (data.results && data.results.length > 0) {
+                        window.location.href = `/user/${encodeURIComponent(data.results[0].username)}`;
+                    } else {
+                        searchDropdown.innerHTML = '<div class="search-drop-empty">❌ 찾을 수 없습니다</div>';
+                        searchDropdown.classList.remove('hidden');
+                    }
+                } catch { closeSearchDrop(); }
+            }
+        });
+        document.addEventListener('click', e => {
+            if (!document.getElementById('searchWrap').contains(e.target)) closeSearchDrop();
+        });
+
+        // 다크모드 토글
+        const darkToggle = document.getElementById('darkToggle');
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark');
+            darkToggle.textContent = '☀️';
+        }
+        darkToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            darkToggle.textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        });
+
+        // ── 새 글 배지 ──
+        (async () => {
+            try {
+                const data = await fetch('/api/new-activity').then(r => r.json());
+                const lastRecruit = parseFloat(localStorage.getItem('lastVisitRecruit') || '0');
+                const lastNotice  = parseFloat(localStorage.getItem('lastVisitNotice')  || '0');
+
+                if (data.profile_latest > lastRecruit) {
+                    document.getElementById('dotRecruit').classList.remove('hidden');
+                    document.getElementById('btnDotRecruit').classList.remove('hidden');
+                }
+                if (data.notice_latest > lastNotice) {
+                    document.getElementById('dotNotice').classList.remove('hidden');
+                    document.getElementById('btnDotNotice').classList.remove('hidden');
+                }
+            } catch {}
+        })();
+
+        // 링크 클릭 시 방문 시각 기록
+        document.getElementById('navRecruit').addEventListener('click', () => localStorage.setItem('lastVisitRecruit', Date.now() / 1000));
+        document.getElementById('navNotice').addEventListener('click',  () => localStorage.setItem('lastVisitNotice',  Date.now() / 1000));
+        document.getElementById('btnRecruit').addEventListener('click', () => localStorage.setItem('lastVisitRecruit', Date.now() / 1000));
+        document.getElementById('btnNotice').addEventListener('click',  () => localStorage.setItem('lastVisitNotice',  Date.now() / 1000));
+
+    </script>
+<script>
+setInterval(async () => {
+    const res = await fetch('/api/session-check');
+    if (res.status === 401 || res.status === 403) location.href = '/login';
+}, 30000);
+</script>
+</body>
+</html>

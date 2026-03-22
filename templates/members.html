@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/recruit.css">
+    <link rel="stylesheet" href="/static/css/notif.css">
+    <title>멤버 보기 · DevBoard</title>
+    <script>if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark-early');</script>
+    <style>.dark-early body,.dark-early{background-color:#1a1a2e!important;}</style>
+    <style>
+        .members-page-wrap { max-width: 1100px; margin: 32px auto; padding: 0 24px; }
+        .members-page-header { margin-bottom: 24px; }
+        .members-page-header h2 { font-size: 22px; font-weight: 700; color: #333; }
+        .members-page-header p  { font-size: 14px; color: #666; margin-top: 4px; }
+        .members-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+            gap: 16px;
+        }
+        .member-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 20px 16px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.15s, box-shadow 0.15s;
+            position: relative;
+        }
+        .member-card:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,0.13); }
+        .member-card-avatar {
+            width: 56px; height: 56px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; font-weight: 700; color: #fff;
+            flex-shrink: 0;
+        }
+        .member-card-info { text-align: center; width: 100%; }
+        .member-card-name { font-size: 15px; font-weight: 700; color: #222; word-break: break-all; }
+        .member-card-id   { font-size: 12px; color: #888; margin-top: 2px; word-break: break-all; }
+        .member-card-locked { font-size: 12px; color: #e74c3c; margin-top: 4px; }
+        .self-tag { font-size: 11px; background: #eef; color: #5b5ef7; border-radius: 6px; padding: 1px 6px; margin-left: 4px; }
+        .member-dm-hint { font-size: 12px; color: #5b5ef7; opacity: 0; transition: opacity 0.2s; margin-top: 4px; }
+        .member-card:hover .member-dm-hint { opacity: 1; }
+        .members-loading { text-align: center; color: #888; padding: 40px; }
+
+        /* 다크모드 */
+        body.dark { background: #12121f; color: #e0e0e0; }
+        body.dark .members-page-header h2 { color: #e8e8f0; }
+        body.dark .members-page-header p  { color: #aaa; }
+        body.dark .member-card { background: #1e2035; box-shadow: 0 2px 8px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.06); }
+        body.dark .member-card-name { color: #e8e8f0; }
+        body.dark .member-card-id   { color: #9999bb; }
+        body.dark .member-dm-hint   { color: #888cf0; }
+        body.dark .self-tag         { background: #2a2a50; color: #888cf0; }
+        body.dark .members-loading  { color: #aaa; }
+    </style>
+</head>
+<body>
+    <div class="topbar fade-up" style="--fu-delay:0s">
+        <div class="topbar-left">
+            <a href="/main" class="site-logo">💻 DevBoard</a>
+        </div>
+        <nav class="topbar-nav">
+            <a href="/recruit" class="nav-link">구인 게시판</a>
+            <a href="/notice" class="nav-link">공지사항</a>
+            <a href="/members" class="nav-link active">멤버 보기</a>
+        </nav>
+        <div class="topbar-right">
+            <div class="dm-wrap" id="dmWrap">
+                <button class="dm-topbar-btn" id="dmBtn" title="DM">💬<span class="dm-unread-badge hidden" id="dmBadge"></span></button>
+            </div>
+            <div class="notif-wrap" id="notifWrap">
+                <button class="bell-btn" id="bellBtn">🔔<span class="notif-badge hidden" id="notifBadge"></span></button>
+            </div>
+            <button class="darkmode-btn" id="darkToggle" title="다크모드">🌙</button>
+            {% if is_admin %}
+            <a href="/admin" class="admin-link-btn">🛡️ 관리자</a>
+            {% endif %}
+            <span class="welcome">👋 {{ user_id }}님</span>
+            <a href="/user/{{ raw_user_id }}" class="settings-btn">👤 내 프로필</a>
+            <a href="/logout" class="logout-btn">로그아웃</a>
+        </div>
+    </div>
+
+    <!-- ── DM 패널 ── -->
+    <div class="dm-panel" id="dmPanel">
+        <div class="dm-panel-header">
+            <button class="dm-back-btn hidden" id="dmBackBtn">←</button>
+            <span class="dm-panel-title" id="dmPanelTitle">💬 메시지</span>
+            <button class="dm-panel-close" id="dmPanelClose">✕</button>
+        </div>
+        <div class="dm-panel-body" id="dmPanelBody">
+            <div class="dm-empty">대화 내용이 없습니다</div>
+        </div>
+        <div class="dm-input-area hidden" id="dmInputArea">
+            <input type="text" class="dm-input" id="dmInput" placeholder="메시지를 입력하세요..." maxlength="500">
+            <button class="dm-send-btn" id="dmSendBtn">↑</button>
+        </div>
+    </div>
+
+    <div class="members-page-wrap">
+        <div class="members-page-header fade-up" style="--fu-delay:0.08s">
+            <h2>🧑‍🤝‍🧑 가입자 보기</h2>
+            <p>가입된 모든 멤버를 확인하고 DM을 보낼 수 있습니다</p>
+        </div>
+        <div class="members-grid" id="membersGrid">
+            <div class="members-loading">불러오는 중...</div>
+        </div>
+    </div>
+
+    <script src="/static/js/dm.js"></script>
+    <script>
+        function escHtml(str) {
+            const d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+
+        const COLORS = ['#667eea','#f093fb','#4facfe','#43e97b','#fa709a','#ff9a56','#a18cd1'];
+
+        async function loadMembers() {
+            const grid = document.getElementById('membersGrid');
+            try {
+                const res  = await fetch('/api/members');
+                const data = await res.json();
+                const members = (data.members || []).sort((a, b) => (b.is_self ? 1 : 0) - (a.is_self ? 1 : 0));
+                if (!members.length) {
+                    grid.innerHTML = '<div class="members-loading">가입된 멤버가 없습니다</div>';
+                    return;
+                }
+                grid.innerHTML = '';
+                members.forEach((u, i) => {
+                    const card = document.createElement('div');
+                    card.className = 'member-card fade-up';
+                    card.style.setProperty('--fu-delay', Math.min(i, 10) * 0.05 + 's');
+                    const color = COLORS[u.nickname.charCodeAt(0) % COLORS.length];
+                    card.innerHTML = `
+                        <div class="member-card-avatar" style="background:${color};">${escHtml(u.nickname.charAt(0))}</div>
+                        <div class="member-card-info">
+                            <div class="member-card-name">${escHtml(u.nickname)}${u.is_self ? ' <span class="self-tag">나</span>' : ''}</div>
+                            <div class="member-card-id">${escHtml(u.username)}</div>
+                        </div>
+                        ${!u.is_self ? '<div class="member-dm-hint">💬 클릭해서 대화하기</div>' : ''}
+                    `;
+                    if (!u.is_self) {
+                        card.style.cursor = 'pointer';
+                        card.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            window.DM.openChat(u.username, u.nickname);
+                        });
+                    }
+                    grid.appendChild(card);
+                });
+            } catch {
+                grid.innerHTML = '<div class="members-loading">로딩 실패</div>';
+            }
+        }
+
+        loadMembers();
+
+        // 다크모드
+        const darkToggle = document.getElementById('darkToggle');
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark');
+            darkToggle.textContent = '☀️';
+        }
+        darkToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            darkToggle.textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        });
+    </script>
+    <script src="/static/js/notif.js"></script>
+<script>
+setInterval(async () => {
+    const res = await fetch('/api/session-check');
+    if (res.status === 401 || res.status === 403) location.href = '/login';
+}, 30000);
+</script>
+</body>
+</html>

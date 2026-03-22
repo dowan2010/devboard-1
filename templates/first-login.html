@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/first-login.css">
+    <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/4.0.0/uicons-solid-rounded/css/uicons-solid-rounded.css'>
+    <title>Document</title>
+</head>
+<body>
+    <script>if(localStorage.getItem('theme')==='dark')document.body.classList.add('dark');</script>
+    <box>
+        <form action="/signup_process" method="POST">
+        <div class="login">
+            <a class="back-btn" href="/">&#8592; 로그인 화면으로 돌아가기</a>
+            <h2 class="gg">회원가입</h2>
+            <div class="email-row">
+                <div class="input-wrapper">
+                    <input type="text" placeholder="이메일 입력" class="email" id="email" oninput="formatEmail(); resetVerificationStatus()" name="email">
+                    <span class="fixed-suffix">@gmail.com</span>
+                </div>
+                <button type="button" class="send-code-btn" id="sendCodeBtn" onclick="sendVerificationCode()">인증번호 전송</button>
+            </div>
+
+            <div class="verify-row" style="display:none;" id="verifyRow">
+                <input type="text" placeholder="인증번호 입력" id="verifyCode" oninput="onVerifyCodeInput()" maxlength="6" class="verify-input">
+                <button type="button" class="send-code-btn" id="verifyCodeBtn">확인</button>
+            </div>
+            <p class="pw-error" id="verifyStatus"></p>
+
+            <div class="password-wrapper">
+                <input type="password" placeholder="사용할 비밀번호를 입력하세요" class="password" id="pw1" oninput="checkPwRule(); checkAll()" name="password">
+                <i class="fi fi-sr-eye-crossed toggle-pw" id="togglePw1" onclick="togglePassword('pw1', 'togglePw1')"></i>
+            </div>
+            <p class="pw-error" id="pwRuleError"></p>
+
+            <div class="password-wrapper">
+                <input type="password" placeholder="비밀번호 한번 더 확인" class="password" id="pw2" oninput="checkPassword(); checkAll()">
+                <i class="fi fi-sr-eye-crossed toggle-pw" id="togglePw2" onclick="togglePassword('pw2', 'togglePw2')"></i>
+            </div>
+            <p class="pw-error" id="pwError">⚠️ 비밀번호가 일치하지 않습니다.</p>
+
+            <input type="text" placeholder="사용할 닉네임을 입력하세요" class="nickname-input" id="nickname" oninput="checkAll()" name="nickname" maxlength="20">
+
+            <button class="btn" id="signupBtn" disabled>가입하기</button>
+            <div class="first-login"></div>
+        </div>
+        </form>
+    </box>
+
+    <script src="/static/js/first-login.js"></script>
+</body>
+</html>

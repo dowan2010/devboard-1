@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/login.css">
+    <title>로그인</title>
+    <style>
+        .google-login-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            padding: 14px 0;
+            background: #fff;
+            color: #3c4043;
+            border: 1.5px solid #dadce0;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background 0.15s, box-shadow 0.15s;
+            margin-top: 8px;
+        }
+        .google-login-btn:hover {
+            background: #f8f9fa;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.12);
+        }
+        .google-login-btn img {
+            width: 22px;
+            height: 22px;
+        }
+        .login-box-title {
+            font-size: 22px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 28px;
+            color: #1a1a2e;
+        }
+        .login-desc {
+            text-align: center;
+            color: #888;
+            font-size: 13px;
+            margin-top: 20px;
+        }
+        /* ── 다크모드 ── */
+        body.dark .login {
+            background: #1e1e32;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+        }
+        body.dark .login-box-title { color: #e0e0e0; }
+        body.dark .google-login-btn {
+            background: #2a2a42;
+            border-color: #444;
+            color: #ddd;
+        }
+        body.dark .google-login-btn:hover {
+            background: #33334e;
+        }
+        body.dark .login-desc { color: #666; }
+        body.dark .gg { color: #e0e0e0; }
+    </style>
+</head>
+<body>
+    <script>if(localStorage.getItem('theme')==='dark')document.body.classList.add('dark');</script>
+    <div class="toast" id="toast">✅ 로그인에 성공했습니다!</div>
+    <box>
+        <div class="login">
+            <h2 class="gg">로그인</h2>
+            <a href="/auth/google" class="google-login-btn">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                Google로 로그인
+            </a>
+            <p class="login-desc">구글 계정으로 간편하게 로그인하세요</p>
+        </div>
+    </box>
+
+    <script>
+        {% if show_toast %}
+        const toast = document.getElementById('toast');
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+        {% endif %}
+    </script>
+</body>
+</html>

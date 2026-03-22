@@ -1,0 +1,243 @@
+body {
+    background:
+        radial-gradient(ellipse 80% 60% at 15% 20%, rgba(255, 150, 220, 0.7) 0%, transparent 65%),
+        radial-gradient(ellipse 60% 50% at 85% 15%, rgba(150, 175, 255, 0.7) 0%, transparent 65%),
+        linear-gradient(150deg, #e8aaf0 0%, #c8b0f8 40%, #a8c4f8 100%);
+    background-attachment: fixed;
+    margin: 0;
+    min-height: 100vh;
+    min-width: 100vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+box {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.login {
+    background-color: white;
+    padding: 35px 50px 55px 50px;
+    border-radius: 20px;
+    width: 350px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* 뒤로가기 버튼 */
+.back-btn {
+    text-decoration: none;
+    color: #888;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.2s;
+    margin-bottom: 2px;
+}
+
+.back-btn:hover {
+    color: #1a73e8;
+}
+
+/* 제목 */
+.gg {
+    text-align: center;
+    margin: 0 0 4px 0;
+}
+
+/* 공통 input */
+input {
+    border-radius: 20px;
+    padding: 17px 20px;
+    font-size: 16px;
+    font-weight: 400;
+    color: black;
+    box-sizing: border-box;
+}
+
+input::placeholder {
+    color: #aaa;
+    font-weight: 400;
+}
+
+/* 이메일 입력 래퍼 */
+.input-wrapper {
+    display: flex;
+    align-items: center;
+    border: 2px solid black;
+    border-radius: 20px;
+    overflow: hidden;
+    padding: 0 15px;
+    background-color: white;
+    box-sizing: border-box;
+    min-height: 58px;
+}
+
+.input-wrapper input {
+    border: none;
+    outline: none;
+    padding: 16px 5px;
+    font-size: 16px;
+    flex: 1;
+    border-radius: 0;
+    min-width: 0;
+}
+
+.input-wrapper:focus-within {
+    border-color: #1a73e8;
+}
+
+/* 이메일 / 인증번호 입력 + 버튼 가로 배치 공통 */
+.email-row,
+.verify-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.email-row .input-wrapper {
+    flex: 1;
+}
+
+.verify-row .verify-input {
+    flex: 1;
+}
+
+/* 인증번호 전송 버튼 */
+.send-code-btn {
+    flex-shrink: 0;
+    width: auto;
+    min-height: 58px;
+    padding: 0 14px;
+    font-size: 13px;
+    border-radius: 13px;
+    background-color: rgb(143, 203, 255);
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: "배달의민족 주아", sans-serif;
+}
+
+.send-code-btn:disabled {
+    background-color: #d0d0d0;
+    color: #999;
+    cursor: not-allowed;
+}
+
+.fixed-suffix {
+    color: #555;
+    font-size: 14px;
+    white-space: nowrap;
+    padding-left: 2px;
+}
+
+/* 인증번호 입력 */
+.verify-input {
+    border: 2px solid black;
+    border-radius: 20px;
+    padding: 17px 20px;
+    font-size: 16px;
+    width: 100%;
+    box-sizing: border-box;
+    outline: none;
+}
+
+.verify-input:focus {
+    border-color: #1a73e8;
+}
+
+/* 비밀번호 래퍼 */
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-wrapper input {
+    width: 100%;
+    padding-right: 50px;
+    box-sizing: border-box;
+    border: 2px solid black;
+    outline: none;
+}
+
+.password-wrapper:focus-within input {
+    border-color: #1a73e8;
+}
+
+.toggle-pw {
+    position: absolute;
+    right: 15px;
+    cursor: pointer;
+    font-size: 18px;
+    color: #aaa;
+    user-select: none;
+}
+
+.toggle-pw:hover {
+    color: #555;
+}
+
+/* 오류 메세지 */
+.pw-error {
+    display: none;
+    color: red;
+    font-size: 12px;
+    margin: 0;
+    padding-left: 5px;
+}
+
+/* 닉네임 입력 */
+.nickname-input {
+    width: 100%;
+    border: 2px solid black;
+    border-radius: 20px;
+    padding: 17px 20px;
+    font-size: 16px;
+    box-sizing: border-box;
+    outline: none;
+}
+
+.nickname-input:focus {
+    border-color: #1a73e8;
+}
+
+/* 버튼 공통 */
+button {
+    text-align: center;
+    border-radius: 13px;
+    min-height: 54px;
+    padding: 0;
+    border: none;
+    background-color: rgb(143, 203, 255);
+    font-size: 17px;
+    font-family: "배달의민족 주아", sans-serif;
+    cursor: pointer;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+button:disabled {
+    background-color: #d0d0d0;
+    color: #999;
+    cursor: not-allowed;
+}
+
+/* 작은 버튼 (인증번호 전송/확인) */
+.btn.small {
+    width: 140px;
+    min-height: 46px;
+    font-size: 14px;
+    align-self: flex-end;
+}
+
+.send-code-btn {
+    min-width: 70px;
+}

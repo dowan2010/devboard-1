@@ -1,0 +1,103 @@
+body {
+    background:
+        radial-gradient(ellipse 80% 60% at 15% 20%, rgba(255, 150, 220, 0.7) 0%, transparent 65%),
+        radial-gradient(ellipse 60% 50% at 85% 15%, rgba(150, 175, 255, 0.7) 0%, transparent 65%),
+        linear-gradient(150deg, #e8aaf0 0%, #c8b0f8 40%, #a8c4f8 100%);
+    background-attachment: fixed;
+    margin: 0;
+    min-height: 100vh;
+    min-width: 100vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+.login {
+    background-color: white;
+    padding: 40px;
+    border-radius: 20px;
+    width: 350px;
+    height: 200px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+box {
+    align-items: flex-start;
+    justify-content: center;
+    align-items: center;
+}
+
+input {
+    border-radius: 20px;
+    padding: 20px;
+    font-size: 15px;
+}
+
+button {
+    text-align: center;
+    border-radius: 13px;
+    min-height: 50px;
+    padding: center;
+    background-color: rgb(143, 203, 255);
+    font-size: 19px;
+    font-family: "배달의민족 주아";
+}
+
+.first-login {
+    text-decoration: none;
+    font-size: 12px;
+    color: inherit;
+    margin-top: 0;
+}
+
+.first-login-font {
+    text-decoration: none;
+    color: blue;
+}
+
+/* 비밀번호 토글 */
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-wrapper input {
+    width: 100%;
+    padding-right: 50px;
+    box-sizing: border-box;
+}
+
+.toggle-pw {
+    position: absolute;
+    right: 15px;
+    cursor: pointer;
+    font-size: 18px;
+    color: #aaa;
+    user-select: none;
+}
+
+.toggle-pw:hover {
+    color: #555;
+}
+
+/* 비밀번호 불일치 오류 메세지 */
+.pw-error {
+    display: none;
+    color: red;
+    font-size: 12px;
+    margin: 0;
+    padding-left: 5px;
+}
+
+.gg {
+    text-align: center;
+}
+
+.btn {
+    text-align: center;
+}

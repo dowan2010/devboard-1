@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/settings.css">
+    <title>회원 정보 수정</title>
+</head>
+<body>
+    <script>
+        if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
+    </script>
+    <div class="topbar">
+        <div class="topbar-left">
+            <a href="/main" class="site-logo">💻 DevBoard</a>
+        </div>
+        <nav class="topbar-nav">
+            <a href="/recruit" class="nav-link">구인 게시판</a>
+            <a href="/notice" class="nav-link">공지사항</a>
+            <a href="/members" class="nav-link">멤버 보기</a>
+        </nav>
+        <div class="topbar-right">
+            <button class="darkmode-btn" id="darkToggle" title="다크모드">🌙</button>
+            <span class="welcome">👋 {{ nickname }}님</span>
+            <a href="/user/{{ user_id }}" class="settings-btn">👤 내 프로필</a>
+            <a href="/logout" class="logout-btn">로그아웃</a>
+        </div>
+    </div>
+
+    <div class="page-content">
+        <div class="settings-card">
+            <div class="settings-section">
+                <h3 class="section-title">계정 정보</h3>
+                <div class="info-row">
+                    <span class="info-label">이메일</span>
+                    <span class="info-value">{{ user_id }}@gmail.com</span>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="settings-section">
+                <h3 class="section-title">닉네임 변경</h3>
+                <p class="section-desc">다른 사람들에게 표시되는 이름입니다.</p>
+                <div class="nickname-form">
+                    <div class="input-wrap">
+                        <input
+                            type="text"
+                            id="nicknameInput"
+                            class="nickname-input"
+                            value="{{ nickname }}"
+                            maxlength="20"
+                            placeholder="닉네임 입력"
+                        >
+                        <span class="char-count"><span id="charCount">{{ nickname|length }}</span>/20</span>
+                    </div>
+                    <p class="input-error hidden" id="inputError"></p>
+                    <button class="save-btn" id="saveBtn">저장하기</button>
+                </div>
+                <div class="success-toast hidden" id="successToast">✅ 닉네임이 변경되었습니다!</div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="settings-section">
+                <h3 class="section-title">소셜 정보</h3>
+                <p class="section-desc">프로필 하단에 표시됩니다. 비워두면 표시되지 않습니다.</p>
+                <div class="social-form">
+                    <div class="social-row">
+                        <span class="social-icon">🎮</span>
+                        <div class="social-input-wrap">
+                            <label class="social-label">디스코드 아이디</label>
+                            <input type="text" id="discordInput" class="social-input"
+                                value="{{ discord_id }}" placeholder="예: username#1234" maxlength="50">
+                        </div>
+                    </div>
+                    <div class="social-row">
+                        <span class="social-icon">🐙</span>
+                        <div class="social-input-wrap">
+                            <label class="social-label">깃허브 아이디</label>
+                            <input type="text" id="githubInput" class="social-input"
+                                value="{{ github_id }}" placeholder="예: username" maxlength="50">
+                        </div>
+                    </div>
+                    <p class="input-error hidden" id="socialError"></p>
+                    <button class="save-btn" id="socialSaveBtn">저장하기</button>
+                </div>
+                <div class="success-toast hidden" id="socialToast">✅ 소셜 정보가 저장되었습니다!</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const input = document.getElementById('nicknameInput');
+        const charCount = document.getElementById('charCount');
+        const saveBtn = document.getElementById('saveBtn');
+        const errorEl = document.getElementById('inputError');
+        const successToast = document.getElementById('successToast');
+
+        input.addEventListener('input', () => {
+            charCount.textContent = input.value.length;
+            errorEl.classList.add('hidden');
+        });
+
+        saveBtn.addEventListener('click', async () => {
+            const nickname = input.value.trim();
+            if (!nickname) {
+                errorEl.textContent = '닉네임을 입력해주세요.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            saveBtn.disabled = true;
+            saveBtn.textContent = '저장 중...';
+
+            const formData = new FormData();
+            formData.append('nickname', nickname);
+
+            try {
+                const res = await fetch('/update_nickname', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.success) {
+                    input.value = data.nickname;
+                    charCount.textContent = data.nickname.length;
+                    successToast.classList.remove('hidden');
+                    setTimeout(() => successToast.classList.add('hidden'), 2500);
+                } else {
+                    errorEl.textContent = data.error || '오류가 발생했습니다.';
+                    errorEl.classList.remove('hidden');
+                }
+            } catch {
+                errorEl.textContent = '오류가 발생했습니다. 다시 시도해주세요.';
+                errorEl.classList.remove('hidden');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = '저장하기';
+            }
+        });
+    </script>
+    <script>
+        const socialSaveBtn = document.getElementById('socialSaveBtn');
+        const socialError   = document.getElementById('socialError');
+        const socialToast   = document.getElementById('socialToast');
+
+        socialSaveBtn.addEventListener('click', async () => {
+            socialSaveBtn.disabled = true;
+            socialSaveBtn.textContent = '저장 중...';
+            const fd = new FormData();
+            fd.append('discord_id', document.getElementById('discordInput').value.trim());
+            fd.append('github_id',  document.getElementById('githubInput').value.trim());
+            try {
+                const res = await fetch('/update_social', { method: 'POST', body: fd });
+                const data = await res.json();
+                if (data.success) {
+                    socialToast.classList.remove('hidden');
+                    setTimeout(() => socialToast.classList.add('hidden'), 2500);
+                } else {
+                    socialError.textContent = data.error || '오류가 발생했습니다.';
+                    socialError.classList.remove('hidden');
+                }
+            } catch {
+                socialError.textContent = '오류가 발생했습니다. 다시 시도해주세요.';
+                socialError.classList.remove('hidden');
+            } finally {
+                socialSaveBtn.disabled = false;
+                socialSaveBtn.textContent = '저장하기';
+            }
+        });
+    </script>
+    <script>
+        const darkToggle = document.getElementById('darkToggle');
+        if (localStorage.getItem('theme') === 'dark') { document.body.classList.add('dark'); darkToggle.textContent = '☀️'; }
+        darkToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            darkToggle.textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        });
+    </script>
+    <footer class="site-footer">
+        <a href="https://github.com/dowan1220-ai/DevBoard" target="_blank" rel="noopener">📂 오픈소스 코드</a>
+    </footer>
+</body>
+</html>

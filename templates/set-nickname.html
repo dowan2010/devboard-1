@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/login.css">
+    <title>닉네임 설정</title>
+    <style>
+        .nickname-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .nickname-desc {
+            text-align: center;
+            color: #888;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+        .nickname-input {
+            width: 100%;
+            padding: 13px 16px;
+            border: 1.5px solid #dadce0;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        .nickname-input:focus {
+            border-color: #4f8ef7;
+        }
+        .nickname-submit-btn {
+            width: 100%;
+            padding: 14px 0;
+            background: #4f8ef7;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .nickname-submit-btn:hover {
+            background: #3a7de0;
+        }
+        .char-count {
+            text-align: right;
+            font-size: 12px;
+            color: #aaa;
+            margin-top: -10px;
+        }
+        .error-msg {
+            color: #e53e3e;
+            font-size: 13px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <script>if(localStorage.getItem('theme')==='dark')document.body.classList.add('dark');</script>
+    <box>
+        <div class="login">
+            <h2 class="gg">닉네임 설정</h2>
+            <p class="nickname-desc">서비스에서 사용할 닉네임을 입력해주세요</p>
+            {% if error %}<p class="error-msg">{{ error }}</p>{% endif %}
+            <form action="/set_nickname" method="POST" class="nickname-form">
+                <input
+                    type="text"
+                    name="nickname"
+                    id="nicknameInput"
+                    class="nickname-input"
+                    placeholder="닉네임 (최대 20자)"
+                    maxlength="20"
+                    oninput="updateCount()"
+                    required
+                >
+                <p class="char-count"><span id="charCount">0</span> / 20</p>
+                <button type="submit" class="nickname-submit-btn">시작하기</button>
+            </form>
+        </div>
+    </box>
+
+    <script>
+        function updateCount() {
+            const input = document.getElementById('nicknameInput');
+            document.getElementById('charCount').textContent = input.value.length;
+        }
+    </script>
+</body>
+</html>
