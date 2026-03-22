@@ -6,7 +6,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from typing import Optional
 from dotenv import load_dotenv
 
-import libsql_experimental as libsql  # noqa: F401  (registers sqlite+libsql dialect)
+import libsql_experimental as libsql
 import time
 import os
 
@@ -128,12 +128,13 @@ class Profile(SQLModel, table=True):
 TURSO_URL   = os.environ.get("TURSO_DATABASE_URL")
 TURSO_TOKEN = os.environ.get("TURSO_AUTH_TOKEN")
 if TURSO_URL and TURSO_TOKEN:
-    host       = TURSO_URL.replace("libsql://", "")
-    sqlite_url = f"sqlite+libsql://{host}?authToken={TURSO_TOKEN}&secure=true"
-    engine     = create_engine(sqlite_url, connect_args={"check_same_thread": False})
+    def _turso_creator():
+        conn = libsql.connect(database="local.db", sync_url=TURSO_URL, auth_token=TURSO_TOKEN)
+        conn.sync()
+        return conn
+    engine = create_engine("sqlite+pysqlite:///", creator=_turso_creator, connect_args={"check_same_thread": False})
 else:
-    sqlite_url = "sqlite:///database.db"
-    engine     = create_engine(sqlite_url)
+    engine = create_engine("sqlite:///database.db")
 
 with app.app_context():
     SQLModel.metadata.create_all(engine)
