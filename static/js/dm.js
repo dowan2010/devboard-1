@@ -144,12 +144,29 @@
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
     }
 
+    // ── 메시지 즉시 표시 (Optimistic UI) ──
+    function appendSingleMsg(msg) {
+        const body = el('dmPanelBody');
+        if (!body) return;
+        const empty = body.querySelector('.dm-empty');
+        if (empty) empty.remove();
+        const div = document.createElement('div');
+        div.className = `dm-msg ${msg.is_mine ? 'dm-msg-mine' : 'dm-msg-other'}`;
+        div.innerHTML = `
+            <div class="dm-msg-bubble">${escHtml(msg.message)}</div>
+            <div class="dm-msg-time">방금 전</div>
+        `;
+        body.appendChild(div);
+        body.scrollTop = body.scrollHeight;
+    }
+
     // ── 메시지 전송 ──
     async function sendMsg() {
         const input = el('dmInput');
         const msg   = input ? input.value.trim() : '';
         if (!msg || !currentUserId) return;
         if (input) input.value = '';
+        appendSingleMsg({ message: msg, is_mine: true });
         const fd = new FormData();
         fd.append('message', msg);
         try {

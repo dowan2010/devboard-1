@@ -931,6 +931,18 @@ loadProfiles();
         const msg = input.value.trim();
         if (!msg || !groupTeamId) return;
         input.value = '';
+        // 즉시 UI 표시 (Optimistic UI)
+        const body = document.getElementById('groupChatBody');
+        const emptyEl = body.querySelector('[data-empty]');
+        if (emptyEl) body.innerHTML = '';
+        const div = document.createElement('div');
+        div.style.cssText = 'display:flex;flex-direction:column;align-items:flex-end;margin-bottom:8px;';
+        div.innerHTML = `
+            <div style="max-width:80%;padding:8px 12px;border-radius:16px 16px 4px 16px;background:#667eea;color:#fff;font-size:14px;">${escapeHtml(msg)}</div>
+            <div style="font-size:10px;color:#ccc;margin-top:2px;">방금 전</div>
+        `;
+        body.appendChild(div);
+        body.scrollTop = body.scrollHeight;
         const fd = new FormData();
         fd.append('message', msg);
         try {
