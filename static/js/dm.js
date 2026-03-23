@@ -25,9 +25,10 @@
     function el(id) { return document.getElementById(id); }
 
     // ── 상태 ──
-    let isOpen        = false;
-    let currentUserId = null;
-    let pollTimer     = null;
+    let isOpen           = false;
+    let currentUserId    = null;
+    let pollTimer        = null;
+    let renderedMsgCount = 0;   // 마지막으로 렌더된 메시지 수 (깜빡임 방지용)
 
     // ── 패널 열기/닫기 ──
     function openPanel(loadConvs) {
@@ -45,7 +46,8 @@
 
     // ── 채팅 화면 전환 ──
     function switchToChat(userId, nickname) {
-        currentUserId = userId;
+        currentUserId    = userId;
+        renderedMsgCount = 0;
         const title = el('dmPanelTitle');
         const back  = el('dmBackBtn');
         const input = el('dmInputArea');
@@ -59,7 +61,8 @@
     }
     function switchToList() {
         stopPoll();
-        currentUserId = null;
+        currentUserId    = null;
+        renderedMsgCount = 0;
         const title = el('dmPanelTitle');
         const back  = el('dmBackBtn');
         const input = el('dmInputArea');
@@ -112,24 +115,41 @@
             updateBadge();
         } catch {}
     }
+    function buildMsgDiv(msg) {
+        const div = document.createElement('div');
+        div.className = `dm-msg ${msg.is_mine ? 'dm-msg-mine' : 'dm-msg-other'}`;
+        div.innerHTML = `
+            <div class="dm-msg-bubble">${escHtml(msg.message)}</div>
+            <div class="dm-msg-time">${timeAgo(msg.created_at)}</div>
+        `;
+        return div;
+    }
     function renderMessages(messages) {
         const body = el('dmPanelBody');
         if (!body) return;
         const atBottom = body.scrollHeight - body.scrollTop <= body.clientHeight + 80;
-        body.innerHTML = '';
+
         if (!messages.length) {
+            renderedMsgCount = 0;
             body.innerHTML = '<div class="dm-empty">대화를 시작해보세요!</div>';
             return;
         }
-        messages.forEach(msg => {
-            const div = document.createElement('div');
-            div.className = `dm-msg ${msg.is_mine ? 'dm-msg-mine' : 'dm-msg-other'}`;
-            div.innerHTML = `
-                <div class="dm-msg-bubble">${escHtml(msg.message)}</div>
-                <div class="dm-msg-time">${timeAgo(msg.created_at)}</div>
-            `;
-            body.appendChild(div);
-        });
+
+        // 이미 렌더된 메시지가 있고, 서버 메시지 수가 같거나 늘었으면 →
+        // 기존 DOM을 지우지 않고 새 메시지만 추가 (깜빡임 방지)
+        if (renderedMsgCount > 0 && messages.length >= renderedMsgCount) {
+            // 낙관적 UI로 표시한 임시 메시지 제거
+            body.querySelectorAll('.dm-msg[data-optimistic]').forEach(n => n.remove());
+            // 서버에서 새로 온 메시지만 append
+            messages.slice(renderedMsgCount).forEach(msg => body.appendChild(buildMsgDiv(msg)));
+            renderedMsgCount = messages.length;
+        } else {
+            // 첫 로드이거나 메시지가 줄어든 경우 → 전체 재렌더
+            renderedMsgCount = messages.length;
+            body.innerHTML = '';
+            messages.forEach(msg => body.appendChild(buildMsgDiv(msg)));
+        }
+
         if (atBottom) body.scrollTop = body.scrollHeight;
     }
 
@@ -152,6 +172,7 @@
         if (empty) empty.remove();
         const div = document.createElement('div');
         div.className = `dm-msg ${msg.is_mine ? 'dm-msg-mine' : 'dm-msg-other'}`;
+        div.setAttribute('data-optimistic', 'true');   // 서버 응답 후 교체되는 임시 메시지
         div.innerHTML = `
             <div class="dm-msg-bubble">${escHtml(msg.message)}</div>
             <div class="dm-msg-time">방금 전</div>
