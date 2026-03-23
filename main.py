@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 
 import time
 import os
+import json
 
 load_dotenv()
 
@@ -866,8 +867,65 @@ def user_profile(target_username):
 def recruit():
     if 'user_id' not in session:
         return redirect(url_for('index'))
-    nickname = session.get('nickname', session['user_id'])
-    return render_template('recruit.html', user_id=nickname, is_admin=check_admin(), raw_user_id=session.get('user_id',''))
+    current_user = session['user_id']
+    nickname = session.get('nickname', current_user)
+
+    # 초기 데이터를 서버에서 미리 조회 → JS API 호출 왕복 제거
+    init_profiles, init_teams = [], []
+    try:
+        with Session(engine) as db_session:
+            profiles   = db_session.exec(select(Profile).where(Profile.post_type == 'recruit').order_by(Profile.created_at)).all()
+            teams      = db_session.exec(select(Team).order_by(Team.created_at)).all()
+            users      = db_session.exec(select(User)).all()
+            interests  = db_session.exec(select(RecruitInterest).where(RecruitInterest.sender_id == current_user)).all()
+            members_all = db_session.exec(select(TeamMember)).all()
+
+        nick_map = {u.username: (u.nickname or u.username) for u in users}
+        sent_set = {i.profile_id for i in interests}
+
+        mine, others = [], []
+        for p in profiles:
+            row = {
+                "id": p.id, "name": p.name,
+                "nickname": nick_map.get(p.user_id, p.user_id),
+                "bio": p.bio or '', "class_number": p.class_number, "major": p.major,
+                "past_languages":    [l.strip() for l in p.past_languages.split(',')    if l.strip()],
+                "current_languages": [l.strip() for l in p.current_languages.split(',') if l.strip()],
+                "profile_image": p.profile_image, "post_type": p.post_type, "dev_field": p.dev_field,
+                "is_mine": p.user_id == current_user,
+                "interest_sent": p.id in sent_set,
+                "owner_id": p.user_id,
+            }
+            (mine if p.user_id == current_user else others).append(row)
+        init_profiles = mine + others
+
+        mem_map = {}
+        for m in members_all:
+            mem_map.setdefault(m.team_id, []).append(m)
+        for t in teams:
+            mems     = mem_map.get(t.id, [])
+            accepted = [m for m in mems if m.status == 'accepted']
+            pending  = [m for m in mems if m.status == 'pending']
+            my_status = next((m.status for m in mems if m.user_id == current_user), None)
+            init_teams.append({
+                "id": t.id, "name": t.name, "description": t.description,
+                "dev_field": t.dev_field, "max_members": t.max_members,
+                "team_image": t.team_image, "leader_id": t.leader_id,
+                "leader_name": nick_map.get(t.leader_id, t.leader_name),
+                "is_mine": t.leader_id == current_user, "my_status": my_status,
+                "members":      [{"id": m.id, "user_id": m.user_id, "display_name": nick_map.get(m.user_id, m.display_name), "status": m.status} for m in accepted],
+                "pending_count": len(pending),
+                "pending_list":  [{"id": m.id, "user_id": m.user_id, "display_name": nick_map.get(m.user_id, m.display_name)} for m in pending] if t.leader_id == current_user else [],
+            })
+    except Exception:
+        pass  # 실패 시 빈 데이터로 시작, JS가 API로 재시도
+
+    return render_template(
+        'recruit.html',
+        user_id=nickname, is_admin=check_admin(), raw_user_id=current_user,
+        init_profiles=json.dumps(init_profiles, ensure_ascii=False),
+        init_teams=json.dumps(init_teams, ensure_ascii=False),
+    )
 
 
 @app.route('/api/profiles', methods=['GET'])
