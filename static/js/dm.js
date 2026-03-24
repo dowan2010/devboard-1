@@ -158,7 +158,7 @@
         stopPoll();
         pollTimer = setInterval(() => {
             if (currentUserId && isOpen) loadMessages();
-        }, 3000);
+        }, 5000);
     }
     function stopPoll() {
         if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
@@ -240,7 +240,7 @@
 
         // 초기 배지 + 주기적 업데이트
         updateBadge();
-        setInterval(updateBadge, 10000);
+        setInterval(updateBadge, 15000);
     }
 
     if (document.readyState === 'loading') {

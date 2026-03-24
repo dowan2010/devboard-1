@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session
+from flask_caching import Cache
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 from sqlalchemy import text, or_, and_, func
 from authlib.integrations.flask_client import OAuth
@@ -15,6 +16,9 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY')
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
+# ── 인메모리 캐시 (User 테이블 등 자주 쓰이는 쿼리 결과 60초 보관) ──
+cache = Cache(app, config={'CACHE_TYPE': 'SimpleCache', 'CACHE_DEFAULT_TIMEOUT': 60})
 
 oauth = OAuth(app)
 google = oauth.register(
@@ -184,6 +188,16 @@ with app.app_context():
                 pass
 
 
+@cache.cached(timeout=60, key_prefix='all_users')
+def get_all_users():
+    """User 테이블 전체 조회 (60초 캐시) — nick_map 등에 활용"""
+    with Session(engine) as db_session:
+        return db_session.exec(select(User)).all()
+
+def invalidate_user_cache():
+    cache.delete('all_users')
+
+
 def check_admin():
     """현재 로그인 유저가 관리자(일반 or 총괄)인지 확인"""
     uid = session.get('user_id')
@@ -306,6 +320,7 @@ def set_nickname_submit():
         db_session.add(new_user)
         db_session.commit()
 
+    invalidate_user_cache()   # 신규 가입 시 캐시 무효화
     session.pop('pending_google_id', None)
     session.pop('pending_email', None)
     session['user_id'] = email
@@ -391,6 +406,7 @@ def update_nickname():
             db_session.add(p)
         db_session.commit()
     session['nickname'] = new_nickname
+    invalidate_user_cache()   # 닉네임 변경 시 캐시 무효화
     return {"success": True, "nickname": new_nickname}
 
 
@@ -631,13 +647,13 @@ def admin_page():
 
     init_notices, init_users, init_messages = [], [], []
     try:
+        users = get_all_users()   # 캐시 활용
+        nick_map = {u.username: (u.nickname or u.username) for u in users}
         with Session(engine) as db_session:
             notices  = db_session.exec(select(Notice).order_by(Notice.is_pinned.desc(), Notice.created_at.desc())).all()
-            users    = db_session.exec(select(User)).all()
             profiles = db_session.exec(select(Profile)).all()
             teams    = db_session.exec(select(Team)).all()
             messages = db_session.exec(select(DirectMessage).order_by(DirectMessage.created_at.desc())).all()
-            nick_map = {u.username: (u.nickname or u.username) for u in users}
 
         init_notices = [
             {"id": n.id, "title": n.title, "content": n.content,
@@ -955,13 +971,13 @@ def recruit():
     current_user = session['user_id']
     nickname = session.get('nickname', current_user)
 
-    # ① 기본 탭(구인글)만 SSR — 세션 1개, 쿼리 3개
+    # ① 기본 탭(구인글)만 SSR — 쿼리 2개 (User는 캐시)
     # ② Team/TeamMember/GroupMessage 는 Lazy (탭 클릭 시 API 호출)
     init_profiles = []
     try:
+        users = get_all_users()   # 캐시에서 즉시 반환 (최초 1회만 DB 조회)
         with Session(engine) as db_session:
             profiles  = db_session.exec(select(Profile).where(Profile.post_type == 'recruit').order_by(Profile.created_at)).all()
-            users     = db_session.exec(select(User)).all()
             interests = db_session.exec(select(RecruitInterest).where(RecruitInterest.sender_id == current_user)).all()
 
         nick_map = {u.username: (u.nickname or u.username) for u in users}

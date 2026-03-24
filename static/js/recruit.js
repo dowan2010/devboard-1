@@ -1006,7 +1006,7 @@ loadProfiles();
 
     function startGroupPoll() {
         stopGroupPoll();
-        groupPollTimer = setInterval(() => { if (groupTeamId) loadGroupMessages(); }, 3000);
+        groupPollTimer = setInterval(() => { if (groupTeamId) loadGroupMessages(); }, 5000);
     }
     function stopGroupPoll() {
         if (groupPollTimer) { clearInterval(groupPollTimer); groupPollTimer = null; }
