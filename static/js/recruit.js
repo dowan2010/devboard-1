@@ -911,6 +911,16 @@ loadProfiles();
         groupTeamId           = teamId;
         groupRenderedMsgCount = 0;
         document.getElementById('groupChatOverlay').classList.remove('hidden');
+
+        // 서버에서 미리 받아온 초기 데이터가 있으면 즉시 렌더링
+        const cached = window.__INIT_TEAM_CHATS__ && window.__INIT_TEAM_CHATS__[teamId];
+        if (cached) {
+            delete window.__INIT_TEAM_CHATS__[teamId];
+            renderGroupChatData(cached);
+            startGroupPoll();
+            return;
+        }
+
         document.getElementById('groupChatBody').innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;">불러오는 중...</div>';
         await loadGroupMessages();
         startGroupPoll();
@@ -923,47 +933,48 @@ loadProfiles();
         stopGroupPoll();
     }
 
+    function buildGroupMsgDiv(msg) {
+        const div = document.createElement('div');
+        div.style.cssText = `display:flex;flex-direction:column;align-items:${msg.is_mine ? 'flex-end' : 'flex-start'};margin-bottom:8px;`;
+        div.innerHTML = `
+            ${!msg.is_mine ? `<div style="font-size:11px;color:#888;margin-bottom:2px;">${escapeHtml(msg.sender_nickname)}</div>` : ''}
+            <div style="max-width:80%;padding:8px 12px;border-radius:${msg.is_mine ? '16px 16px 4px 16px' : '16px 16px 16px 4px'};background:${msg.is_mine ? '#667eea' : '#f1f3f5'};color:${msg.is_mine ? '#fff' : '#222'};font-size:14px;">${escapeHtml(msg.message)}</div>
+            <div style="font-size:10px;color:#ccc;margin-top:2px;">${timeAgo(msg.created_at)}</div>
+        `;
+        return div;
+    }
+
+    function renderGroupChatData(data) {
+        document.getElementById('groupChatTitle').textContent = `💬 ${data.team_name}`;
+        const memberList = document.getElementById('groupMemberList');
+        memberList.innerHTML = '<div style="font-weight:700;color:#888;margin-bottom:8px;">팀원</div>' +
+            data.members.map(m => `<div style="padding:4px 0;color:#444;word-break:break-all;">${escapeHtml(m.display_name)}</div>`).join('');
+        const body = document.getElementById('groupChatBody');
+        const atBottom = body.scrollHeight - body.scrollTop <= body.clientHeight + 80;
+        if (!data.messages.length) {
+            groupRenderedMsgCount = 0;
+            body.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;">첫 메시지를 보내보세요!</div>';
+            return;
+        }
+        if (groupRenderedMsgCount > 0 && data.messages.length >= groupRenderedMsgCount) {
+            body.querySelectorAll('[data-optimistic]').forEach(n => n.remove());
+            data.messages.slice(groupRenderedMsgCount).forEach(msg => body.appendChild(buildGroupMsgDiv(msg)));
+            groupRenderedMsgCount = data.messages.length;
+        } else {
+            groupRenderedMsgCount = data.messages.length;
+            body.innerHTML = '';
+            data.messages.forEach(msg => body.appendChild(buildGroupMsgDiv(msg)));
+        }
+        if (atBottom) body.scrollTop = body.scrollHeight;
+    }
+
     async function loadGroupMessages() {
         if (!groupTeamId) return;
         try {
             const res  = await fetch(`/api/teams/${groupTeamId}/messages`);
             const data = await res.json();
             if (data.error) return;
-            document.getElementById('groupChatTitle').textContent = `💬 ${data.team_name}`;
-            // 멤버 목록
-            const memberList = document.getElementById('groupMemberList');
-            memberList.innerHTML = '<div style="font-weight:700;color:#888;margin-bottom:8px;">팀원</div>' +
-                data.members.map(m => `<div style="padding:4px 0;color:#444;word-break:break-all;">${escapeHtml(m.display_name)}</div>`).join('');
-            // 메시지
-            const body = document.getElementById('groupChatBody');
-            const atBottom = body.scrollHeight - body.scrollTop <= body.clientHeight + 80;
-            if (!data.messages.length) {
-                groupRenderedMsgCount = 0;
-                body.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;">첫 메시지를 보내보세요!</div>';
-                return;
-            }
-            const buildGroupMsgDiv = (msg) => {
-                const div = document.createElement('div');
-                div.style.cssText = `display:flex;flex-direction:column;align-items:${msg.is_mine ? 'flex-end' : 'flex-start'};margin-bottom:8px;`;
-                div.innerHTML = `
-                    ${!msg.is_mine ? `<div style="font-size:11px;color:#888;margin-bottom:2px;">${escapeHtml(msg.sender_nickname)}</div>` : ''}
-                    <div style="max-width:80%;padding:8px 12px;border-radius:${msg.is_mine ? '16px 16px 4px 16px' : '16px 16px 16px 4px'};background:${msg.is_mine ? '#667eea' : '#f1f3f5'};color:${msg.is_mine ? '#fff' : '#222'};font-size:14px;">${escapeHtml(msg.message)}</div>
-                    <div style="font-size:10px;color:#ccc;margin-top:2px;">${timeAgo(msg.created_at)}</div>
-                `;
-                return div;
-            };
-            if (groupRenderedMsgCount > 0 && data.messages.length >= groupRenderedMsgCount) {
-                // 낙관적 UI 임시 메시지 제거 후 새 메시지만 추가 (깜빡임 방지)
-                body.querySelectorAll('[data-optimistic]').forEach(n => n.remove());
-                data.messages.slice(groupRenderedMsgCount).forEach(msg => body.appendChild(buildGroupMsgDiv(msg)));
-                groupRenderedMsgCount = data.messages.length;
-            } else {
-                // 첫 로드 또는 전체 재렌더
-                groupRenderedMsgCount = data.messages.length;
-                body.innerHTML = '';
-                data.messages.forEach(msg => body.appendChild(buildGroupMsgDiv(msg)));
-            }
-            if (atBottom) body.scrollTop = body.scrollHeight;
+            renderGroupChatData(data);
         } catch {}
     }
 

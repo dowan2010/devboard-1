@@ -1002,6 +1002,42 @@ def recruit():
                 "pending_count": len(pending),
                 "pending_list":  [{"id": m.id, "user_id": m.user_id, "display_name": nick_map.get(m.user_id, m.display_name)} for m in pending] if t.leader_id == current_user else [],
             })
+
+        # 팀 채팅: 내가 속한 팀(팀장 or 승인 멤버)의 메시지 사전 조회
+        my_team_ids = {
+            t.id for t in teams
+            if t.leader_id == current_user
+            or any(m.user_id == current_user and m.status == 'accepted' for m in mem_map.get(t.id, []))
+        }
+        with Session(engine) as db_session:
+            group_msgs_all = db_session.exec(
+                select(GroupMessage)
+                .where(GroupMessage.team_id.in_(my_team_ids))
+                .order_by(GroupMessage.created_at)
+            ).all() if my_team_ids else []
+
+        # { teamId: { team_name, members, messages } }
+        init_team_chats = {}
+        for t_row in init_teams:
+            tid = t_row["id"]
+            if tid not in my_team_ids:
+                continue
+            leader_display = t_row["leader_name"] + " 👑"
+            members_data = [{"user_id": t_row["leader_id"], "display_name": leader_display}] + [
+                {"user_id": m["user_id"], "display_name": nick_map.get(m["user_id"], m["display_name"])}
+                for m in t_row["members"]
+            ]
+            init_team_chats[tid] = {
+                "team_name": t_row["name"],
+                "members":   members_data,
+                "messages":  [
+                    {"id": gm.id, "sender_id": gm.sender_id,
+                     "sender_nickname": gm.sender_nickname,
+                     "message": gm.message, "created_at": gm.created_at,
+                     "is_mine": gm.sender_id == current_user}
+                    for gm in group_msgs_all if gm.team_id == tid
+                ],
+            }
     except Exception:
         pass  # 실패 시 빈 데이터로 시작, JS가 API로 재시도
 
@@ -1010,6 +1046,7 @@ def recruit():
         user_id=nickname, is_admin=check_admin(), raw_user_id=current_user,
         init_profiles=json.dumps(init_profiles, ensure_ascii=False),
         init_teams=json.dumps(init_teams, ensure_ascii=False),
+        init_team_chats=json.dumps(init_team_chats, ensure_ascii=False),
     )
 
 

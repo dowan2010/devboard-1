@@ -231,8 +231,9 @@
 
     <script>
         // 서버에서 미리 조회한 초기 데이터 → JS API 호출 없이 즉시 렌더링
-        window.__INIT_PROFILES__ = {{ init_profiles | safe }};
-        window.__INIT_TEAMS__    = {{ init_teams | safe }};
+        window.__INIT_PROFILES__   = {{ init_profiles | safe }};
+        window.__INIT_TEAMS__      = {{ init_teams | safe }};
+        window.__INIT_TEAM_CHATS__ = {{ init_team_chats | safe }};
     </script>
     <script src="/static/js/dm.js"></script>
     <script src="/static/js/recruit.js"></script>
