@@ -105,40 +105,48 @@
             return d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
         }
 
-        // 공지 목록 로드
+        const INIT_NOTICES = {{ init_notices | safe }};
+
+        // 공지 목록 렌더링
+        function renderNotices(notices) {
+            const list = document.getElementById('noticeList');
+            if (!notices.length) {
+                list.innerHTML = `
+                    <div class="notice-empty">
+                        <span class="notice-empty-icon">🔔</span>
+                        <p>아직 공지사항이 없습니다</p>
+                        <span class="notice-empty-sub">새로운 공지가 올라오면 여기서 확인하세요!</span>
+                    </div>`;
+                return;
+            }
+            list.innerHTML = '';
+            notices.forEach((n, i) => {
+                const card = document.createElement('div');
+                card.className = `notice-card${n.is_pinned ? ' pinned' : ''} fade-up`;
+                card.style.setProperty('--fu-delay', Math.min(i, 10) * 0.05 + 's');
+                card.innerHTML = `
+                    <div class="notice-card-left">
+                        ${n.is_pinned ? '<span class="notice-pin">📌 고정</span>' : ''}
+                        <div class="notice-card-title">${escHtml(n.title)}</div>
+                        <div class="notice-card-preview">${escHtml(n.content)}</div>
+                    </div>
+                    <div class="notice-card-right">
+                        <span class="notice-card-author">${escHtml(n.author_nickname)}</span>
+                        <span class="notice-card-date">${timeStr(n.created_at)}</span>
+                    </div>
+                `;
+                card.addEventListener('click', () => openDetail(n));
+                list.appendChild(card);
+            });
+        }
+
+        // 공지 목록 로드 (새 공지 작성 후 갱신용)
         async function loadNotices() {
             const list = document.getElementById('noticeList');
             try {
                 const res  = await fetch('/api/notices');
                 const data = await res.json();
-                if (!data.notices.length) {
-                    list.innerHTML = `
-                        <div class="notice-empty">
-                            <span class="notice-empty-icon">🔔</span>
-                            <p>아직 공지사항이 없습니다</p>
-                            <span class="notice-empty-sub">새로운 공지가 올라오면 여기서 확인하세요!</span>
-                        </div>`;
-                    return;
-                }
-                list.innerHTML = '';
-                data.notices.forEach((n, i) => {
-                    const card = document.createElement('div');
-                    card.className = `notice-card${n.is_pinned ? ' pinned' : ''} fade-up`;
-                    card.style.setProperty('--fu-delay', Math.min(i, 10) * 0.05 + 's');
-                    card.innerHTML = `
-                        <div class="notice-card-left">
-                            ${n.is_pinned ? '<span class="notice-pin">📌 고정</span>' : ''}
-                            <div class="notice-card-title">${escHtml(n.title)}</div>
-                            <div class="notice-card-preview">${escHtml(n.content)}</div>
-                        </div>
-                        <div class="notice-card-right">
-                            <span class="notice-card-author">${escHtml(n.author_nickname)}</span>
-                            <span class="notice-card-date">${timeStr(n.created_at)}</span>
-                        </div>
-                    `;
-                    card.addEventListener('click', () => openDetail(n));
-                    list.appendChild(card);
-                });
+                renderNotices(data.notices || []);
             } catch {
                 list.innerHTML = '<div class="notice-loading">로딩 실패. 새로고침해주세요.</div>';
             }
@@ -258,7 +266,12 @@
             }
         }
 
-        loadNotices();
+        // 서버에서 미리 받은 초기 데이터가 있으면 즉시 렌더링, 없으면 API 호출
+        if (INIT_NOTICES && INIT_NOTICES.length > 0) {
+            renderNotices(INIT_NOTICES);
+        } else {
+            loadNotices();
+        }
 
     </script>
     <script src="/static/js/notif.js"></script>

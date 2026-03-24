@@ -451,7 +451,28 @@ def get_members():
 @app.route('/notice')
 def notice():
     nickname = session.get('nickname', session.get('user_id', '게스트'))
-    return render_template('notice.html', user_id=nickname, current_user=session.get('user_id', ''), is_admin=check_admin(), raw_user_id=session.get('user_id',''))
+
+    init_notices = []
+    try:
+        with Session(engine) as db_session:
+            notices = db_session.exec(
+                select(Notice).order_by(Notice.is_pinned.desc(), Notice.created_at.desc())
+            ).all()
+        init_notices = [
+            {"id": n.id, "title": n.title, "content": n.content,
+             "author_nickname": n.author_nickname, "is_pinned": n.is_pinned,
+             "created_at": n.created_at, "updated_at": n.updated_at}
+            for n in notices
+        ]
+    except Exception:
+        pass
+
+    return render_template(
+        'notice.html',
+        user_id=nickname, current_user=session.get('user_id', ''),
+        is_admin=check_admin(), raw_user_id=session.get('user_id',''),
+        init_notices=json.dumps(init_notices, ensure_ascii=False),
+    )
 
 
 @app.route('/api/notices', methods=['GET'])
