@@ -35,6 +35,35 @@
     --card-hover:  0 12px 36px rgba(91, 94, 247, 0.16);
 }
 
+/* ── Lucide 인라인 아이콘 ── */
+.li {
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    flex-shrink: 0;
+    line-height: 1;
+}
+.li svg {
+    width: 1em;
+    height: 1em;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.board-tab .li svg  { width: 1.15em; height: 1.15em; }
+.dm-topbar-btn .li svg,
+.bell-btn .li svg,
+.darkmode-btn .li svg { width: 20px; height: 20px; }
+.dm-send-btn .li svg,
+#groupChatSend .li svg { width: 17px; height: 17px; }
+.dm-back-btn .li svg { width: 20px; height: 20px; }
+.plus-icon .li svg { width: 48px; height: 48px; stroke-width: 1.25; opacity: 0.5; }
+.card-edit-btn .li svg,
+.card-delete-btn .li svg { width: 14px; height: 14px; }
+.notif-icon .li svg { width: 20px; height: 20px; }
+
 * {
     margin: 0;
     padding: 0;
@@ -1045,7 +1074,9 @@ body.dark .team-field-select-btn.active { background: #667eea; border-color: #66
 
 .photo-icon {
     font-size: 28px;
+    color: #bbb;
 }
+.photo-icon .li svg { width: 32px; height: 32px; }
 
 .change-photo-btn {
     background: none;

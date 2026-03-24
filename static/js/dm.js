@@ -52,7 +52,7 @@
         const back  = el('dmBackBtn');
         const input = el('dmInputArea');
         const body  = el('dmPanelBody');
-        if (title) title.textContent = `💬 ${nickname}`;
+        if (title) { title.innerHTML = `<i data-lucide="message-circle" class="li"></i> ${nickname}`; lucide.createIcons({ el: title }); }
         if (back)  back.classList.remove('hidden');
         if (input) input.classList.remove('hidden');
         if (body)  body.innerHTML = '<div class="dm-loading">불러오는 중...</div>';
@@ -66,7 +66,7 @@
         const title = el('dmPanelTitle');
         const back  = el('dmBackBtn');
         const input = el('dmInputArea');
-        if (title) title.textContent = '💬 메시지';
+        if (title) { title.innerHTML = '<i data-lucide="message-circle" class="li"></i> 메시지'; lucide.createIcons({ el: title }); }
         if (back)  back.classList.add('hidden');
         if (input) input.classList.add('hidden');
         loadConversations();

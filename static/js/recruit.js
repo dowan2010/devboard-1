@@ -24,10 +24,13 @@ function escapeHtml(str) {
     return d.innerHTML;
 }
 
+// 아이콘 헬퍼 (Lucide)
+const ic = name => `<i data-lucide="${name}" class="li"></i>`;
+
 const DEV_FIELD_STYLE = {
-    '풀스택':    { bg:'rgba(91,94,247,0.12)',  color:'#5b5ef7', emoji:'🔧' },
-    '백엔드':    { bg:'rgba(39,174,96,0.13)',  color:'#27ae60', emoji:'⚙️' },
-    '프론트엔드': { bg:'rgba(224,85,122,0.13)', color:'#e0557a', emoji:'🎨' },
+    '풀스택':    { bg:'rgba(91,94,247,0.12)',  color:'#5b5ef7', icon:'layers' },
+    '백엔드':    { bg:'rgba(39,174,96,0.13)',  color:'#27ae60', icon:'server' },
+    '프론트엔드': { bg:'rgba(224,85,122,0.13)', color:'#e0557a', icon:'palette' },
 };
 
 // ─── 탭 전환 ───
@@ -152,7 +155,7 @@ document.getElementById('teamImagePreview').addEventListener('click', () => docu
 document.getElementById('teamImageRemoveBtn').addEventListener('click', () => {
     teamImageBase64 = '';
     teamImageRemoved = true;
-    document.getElementById('teamImagePreview').innerHTML = '<span class="photo-icon">📷</span>';
+    document.getElementById('teamImagePreview').innerHTML = `<span class="photo-icon">${ic('camera')}</span>`; lucide.createIcons({ el: document.getElementById('teamImagePreview') });
     syncTeamImageDeleteBtn();
 });
 document.getElementById('teamImageInput').addEventListener('change', e => {
@@ -188,7 +191,7 @@ function openProfileModal() {
     document.querySelector('#profileForm .btn-submit').textContent = '등록하기';
     document.getElementById('profileForm').reset();
     document.getElementById('inp-bio').value = '';
-    document.getElementById('imagePreviewCircle').innerHTML = '<span class="photo-icon">📷</span>';
+    document.getElementById('imagePreviewCircle').innerHTML = `<span class="photo-icon">${ic('camera')}</span>`; lucide.createIcons({ el: document.getElementById('imagePreviewCircle') });
     profileImageBase64 = ''; pastLangs.clear(); currLangs.clear();
     renderTags('past'); renderTags('curr');
     updatePresetButtons('past'); updatePresetButtons('curr');
@@ -211,7 +214,7 @@ function openEditModal(profile) {
         document.getElementById('imagePreviewCircle').innerHTML = `<img src="${profile.profile_image}" alt="프로필">`;
     } else {
         profileImageBase64 = '';
-        document.getElementById('imagePreviewCircle').innerHTML = '<span class="photo-icon">📷</span>';
+        document.getElementById('imagePreviewCircle').innerHTML = `<span class="photo-icon">${ic('camera')}</span>`; lucide.createIcons({ el: document.getElementById('imagePreviewCircle') });
     }
     // 언어
     pastLangs.clear(); currLangs.clear();
@@ -246,7 +249,7 @@ function openTeamModal() {
     document.getElementById('teamSubmitBtn').textContent = '팀 만들기';
     document.getElementById('countDisplay').textContent = 4;
     document.getElementById('teamFormError').textContent = '';
-    document.getElementById('teamImagePreview').innerHTML = '<span class="photo-icon">📷</span>';
+    document.getElementById('teamImagePreview').innerHTML = `<span class="photo-icon">${ic('camera')}</span>`; lucide.createIcons({ el: document.getElementById('teamImagePreview') });
     syncTeamImageDeleteBtn();
     document.querySelectorAll('.team-field-select-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('teamModalOverlay').classList.remove('hidden');
@@ -267,7 +270,7 @@ function openTeamEditModal(team) {
     if (team.team_image) {
         document.getElementById('teamImagePreview').innerHTML = `<img src="${team.team_image}" alt="팀 이미지">`;
     } else {
-        document.getElementById('teamImagePreview').innerHTML = '<span class="photo-icon">📷</span>';
+        document.getElementById('teamImagePreview').innerHTML = `<span class="photo-icon">${ic('camera')}</span>`; lucide.createIcons({ el: document.getElementById('teamImagePreview') });
     }
     syncTeamImageDeleteBtn();
     document.querySelectorAll('.team-field-select-btn').forEach(b => {
@@ -464,10 +467,10 @@ function createPlusCard() {
     const card = document.createElement('div');
     card.className = 'card card-plus';
     if (currentTab === 'team') {
-        card.innerHTML = `<div class="plus-icon">🤝</div><div class="plus-text">팀 만들기</div><div class="plus-sub">새 팀을 만들어보세요!</div>`;
+        card.innerHTML = `<div class="plus-icon">${ic('users')}</div><div class="plus-text">팀 만들기</div><div class="plus-sub">새 팀을 만들어보세요!</div>`;
         card.addEventListener('click', openTeamModal);
     } else {
-        card.innerHTML = `<div class="plus-icon">+</div><div class="plus-text">구인 등록하기</div><div class="plus-sub">내 정보를 등록해보세요!</div>`;
+        card.innerHTML = `<div class="plus-icon">${ic('user-plus')}</div><div class="plus-text">구인 등록하기</div><div class="plus-sub">내 정보를 등록해보세요!</div>`;
         card.addEventListener('click', openProfileModal);
     }
     return card;
@@ -492,8 +495,8 @@ function createProfileCard(profile) {
         ? profile.current_languages.map(l => `<span class="chip chip-curr">${escapeHtml(l)}</span>`).join('')
         : '<span class="no-lang">없음</span>';
 
-    const deleteBtnHtml = profile.is_mine ? `<button class="card-delete-btn" title="삭제">✕</button>` : '';
-    const editBtnHtml   = profile.is_mine ? `<button class="card-edit-btn" title="수정">✏️</button>` : '';
+    const deleteBtnHtml = profile.is_mine ? `<button class="card-delete-btn" title="삭제">${ic('x')}</button>` : '';
+    const editBtnHtml   = profile.is_mine ? `<button class="card-edit-btn" title="수정">${ic('pencil')}</button>` : '';
 
     const bioHtml = profile.bio
         ? `<div class="profile-bio">${escapeHtml(profile.bio)}</div>`
@@ -502,9 +505,9 @@ function createProfileCard(profile) {
     let recruitBtnHtml = '';
     if (!profile.is_mine) {
         if (profile.interest_sent) {
-            recruitBtnHtml = `<button class="recruit-interest-btn sent" disabled>✅ 구인 신청 완료</button>`;
+            recruitBtnHtml = `<button class="recruit-interest-btn sent" disabled>${ic('check')} 구인 신청 완료</button>`;
         } else {
-            recruitBtnHtml = `<button class="recruit-interest-btn" data-id="${profile.id}">👋 구인하기</button>`;
+            recruitBtnHtml = `<button class="recruit-interest-btn" data-id="${profile.id}">${ic('user-plus')} 구인하기</button>`;
         }
     }
 
@@ -553,17 +556,20 @@ function createProfileCard(profile) {
                 const res = await fetch(`/api/profiles/${profile.id}/interest`, {method:'POST'});
                 const data = await res.json();
                 if (data.success) {
-                    interestBtn.textContent = '✅ 구인 신청 완료';
+                    interestBtn.innerHTML = `${ic('check')} 구인 신청 완료`;
                     interestBtn.classList.add('sent');
+                    lucide.createIcons({ el: interestBtn });
                 } else {
                     alert(data.error || '오류가 발생했습니다.');
                     interestBtn.disabled = false;
-                    interestBtn.textContent = '👋 구인하기';
+                    interestBtn.innerHTML = `${ic('user-plus')} 구인하기`;
+                    lucide.createIcons({ el: interestBtn });
                 }
             } catch {
                 alert('네트워크 오류가 발생했습니다. 다시 시도해주세요.');
                 interestBtn.disabled = false;
-                interestBtn.textContent = '👋 구인하기';
+                interestBtn.innerHTML = `${ic('user-plus')} 구인하기`;
+                lucide.createIcons({ el: interestBtn });
             }
         });
     }
@@ -574,7 +580,7 @@ function createTeamCard(team) {
     const card = document.createElement('div');
     card.className = `card card-team${team.is_mine ? ' card-mine' : ''}`;
     card.dataset.id = team.id;
-    const s = DEV_FIELD_STYLE[team.dev_field] || {bg:'rgba(0,0,0,0.08)',color:'#555',emoji:'💻'};
+    const s = DEV_FIELD_STYLE[team.dev_field] || {bg:'rgba(0,0,0,0.08)',color:'#555',icon:'code-2'};
     const memberCount = team.members.length;
     const isFull = memberCount >= team.max_members;
 
@@ -595,13 +601,13 @@ function createTeamCard(team) {
         actionHtml = `
             <div class="team-actions">
                 <button class="team-manage-btn" data-id="${team.id}">
-                    ⚙️ 신청 관리 ${team.pending_count > 0 ? `<span class="pending-badge">${team.pending_count}</span>` : ''}
+                    ${ic('settings')} 신청 관리 ${team.pending_count > 0 ? `<span class="pending-badge">${team.pending_count}</span>` : ''}
                 </button>
             </div>`;
     } else if (team.my_status === 'accepted') {
-        actionHtml = `<div class="team-actions"><div class="team-joined-badge" style="flex:1;">✅ 참여 중</div><button class="team-leave-btn" data-id="${team.id}">나가기</button></div>`;
+        actionHtml = `<div class="team-actions"><div class="team-joined-badge" style="flex:1;">${ic('check-circle')} 참여 중</div><button class="team-leave-btn" data-id="${team.id}">${ic('log-out')} 나가기</button></div>`;
     } else if (team.my_status === 'pending') {
-        actionHtml = `<div class="team-pending-badge">⏳ 신청 중</div>`;
+        actionHtml = `<div class="team-pending-badge">${ic('clock')} 신청 중</div>`;
     } else if (team.my_status === 'rejected') {
         actionHtml = `<div class="team-rejected-badge">거절됨</div>`;
     } else if (!isFull) {
@@ -613,12 +619,12 @@ function createTeamCard(team) {
     if (team.is_mine) {
         card.innerHTML = `
             <div class="mine-badge">내 팀</div>
-            <button class="card-edit-btn" title="수정">✏️</button>
-            <button class="card-delete-btn" title="삭제">✕</button>
+            <button class="card-edit-btn" title="수정">${ic('pencil')}</button>
+            <button class="card-delete-btn" title="삭제">${ic('x')}</button>
             ${team.team_image ? `<div class="team-card-img-wrap"><img class="team-card-img" src="${team.team_image}" alt="팀 이미지"></div>` : ''}
-            <div class="team-field-badge" style="background:${s.bg};color:${s.color};">${s.emoji} ${escapeHtml(team.dev_field || '기타')}</div>
+            <div class="team-field-badge" style="background:${s.bg};color:${s.color};">${ic(s.icon)} ${escapeHtml(team.dev_field || '기타')}</div>
             <div class="team-name">${escapeHtml(team.name)}</div>
-            <div class="team-leader">👑 ${escapeHtml(team.leader_name)}</div>
+            <div class="team-leader">${ic('crown')} ${escapeHtml(team.leader_name)}</div>
             ${team.description ? `<div class="team-desc">${escapeHtml(team.description)}</div>` : ''}
             <div class="card-divider"></div>
             <div class="team-members-label">
@@ -631,9 +637,9 @@ function createTeamCard(team) {
     } else {
         card.innerHTML = `
             ${team.team_image ? `<div class="team-card-img-wrap"><img class="team-card-img" src="${team.team_image}" alt="팀 이미지"></div>` : ''}
-            <div class="team-field-badge" style="background:${s.bg};color:${s.color};">${s.emoji} ${escapeHtml(team.dev_field || '기타')}</div>
+            <div class="team-field-badge" style="background:${s.bg};color:${s.color};">${ic(s.icon)} ${escapeHtml(team.dev_field || '기타')}</div>
             <div class="team-name">${escapeHtml(team.name)}</div>
-            <div class="team-leader">👑 ${escapeHtml(team.leader_name)}</div>
+            <div class="team-leader">${ic('crown')} ${escapeHtml(team.leader_name)}</div>
             ${team.description ? `<div class="team-desc">${escapeHtml(team.description)}</div>` : ''}
             <div class="card-divider"></div>
             <div class="team-members-label">
@@ -779,7 +785,7 @@ function renderNotifDropdown(notifs) {
         const row = document.createElement('div');
         row.className = `notif-row${n.is_read ? '' : ' notif-unread'}`;
         const isView = n.notif_type === 'view';
-        const icon = isView ? '👀' : '👋';
+        const icon = isView ? ic('eye') : ic('user-plus');
         const msg = isView
             ? `<b>${escapeHtml(n.sender_nickname)}</b>님이 <b>${escapeHtml(n.profile_name)}</b> 프로필을 조회했습니다`
             : `<b>${escapeHtml(n.sender_nickname)}</b>님이 <b>${escapeHtml(n.profile_name)}</b>에 구인 신청을 보냈습니다`;
@@ -791,6 +797,7 @@ function renderNotifDropdown(notifs) {
             </div>`;
         notifDropdown.appendChild(row);
     });
+    lucide.createIcons({ el: notifDropdown });
 }
 
 bellBtn.addEventListener('click', async (e) => {
@@ -870,6 +877,7 @@ function renderFiltered() {
         });
         showEmpty(empty, query, filtered.length);
     }
+    lucide.createIcons({ el: grid });
 }
 
 // ─── 검색 입력 이벤트 ───
@@ -965,7 +973,9 @@ loadProfiles();
     }
 
     function renderGroupChatData(data) {
-        document.getElementById('groupChatTitle').textContent = `💬 ${data.team_name}`;
+        const gcTitle = document.getElementById('groupChatTitle');
+        gcTitle.innerHTML = `${ic('message-circle')} ${escapeHtml(data.team_name)}`;
+        lucide.createIcons({ el: gcTitle });
         const memberList = document.getElementById('groupMemberList');
         memberList.innerHTML = '<div style="font-weight:700;color:#888;margin-bottom:8px;">팀원</div>' +
             data.members.map(m => `<div style="padding:4px 0;color:#444;word-break:break-all;">${escapeHtml(m.display_name)}</div>`).join('');

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/static/css/recruit.css">
     <link rel="stylesheet" href="/static/css/notif.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <title>구인·구직·팀 게시판</title>
     <!-- 다크모드 번쩍임 방지: 스타일 로드 직후 즉시 적용 -->
     <script>if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark-early');</script>
@@ -13,7 +14,7 @@
 <body>
     <div class="topbar fade-up" style="--fu-delay:0s">
         <div class="topbar-left">
-            <a href="/main" class="site-logo">💻 DevBoard</a>
+            <a href="/main" class="site-logo"><i data-lucide="code-2" class="li"></i> DevBoard</a>
             <span class="page-title" id="pageTitle">구인 게시판</span>
         </div>
         <nav class="topbar-nav">
@@ -23,17 +24,17 @@
         </nav>
         <div class="topbar-right">
             <div class="dm-wrap" id="dmWrap">
-                <button class="dm-topbar-btn" id="dmBtn" title="DM">💬<span class="dm-unread-badge hidden" id="dmBadge"></span></button>
+                <button class="dm-topbar-btn" id="dmBtn" title="DM"><i data-lucide="message-circle" class="li"></i><span class="dm-unread-badge hidden" id="dmBadge"></span></button>
             </div>
             <div class="notif-wrap" id="notifWrap">
-                <button class="bell-btn" id="bellBtn">🔔<span class="notif-badge hidden" id="notifBadge"></span></button>
+                <button class="bell-btn" id="bellBtn"><i data-lucide="bell" class="li"></i><span class="notif-badge hidden" id="notifBadge"></span></button>
             </div>
-            <button class="darkmode-btn" id="darkToggle" title="다크모드">🌙</button>
+            <button class="darkmode-btn" id="darkToggle" title="다크모드"><i data-lucide="moon" class="li"></i></button>
             {% if is_admin %}
-            <a href="/admin" class="admin-link-btn">🛡️ 관리자</a>
+            <a href="/admin" class="admin-link-btn"><i data-lucide="shield" class="li"></i> 관리자</a>
             {% endif %}
-            <span class="welcome">👋 {{ user_id }}님</span>
-            <a href="/user/{{ raw_user_id }}" class="settings-btn">👤 내 프로필</a>
+            <span class="welcome">{{ user_id }}님</span>
+            <a href="/user/{{ raw_user_id }}" class="settings-btn"><i data-lucide="user" class="li"></i> 내 프로필</a>
             <a href="/logout" class="logout-btn">로그아웃</a>
         </div>
     </div>
@@ -41,15 +42,15 @@
     <!-- 탭 -->
     <div class="board-tabs fade-up" style="--fu-delay:0.08s">
         <button class="board-tab active" id="tab-recruit" data-type="recruit">
-            🔍 구인 게시판
+            <i data-lucide="search" class="li"></i> 구인 게시판
             <span class="tab-sub">팀원 찾기</span>
         </button>
         <button class="board-tab" id="tab-team" data-type="team">
-            🤝 팀 게시판
+            <i data-lucide="users" class="li"></i> 팀 게시판
             <span class="tab-sub">팀 만들기/참여</span>
         </button>
         <a href="/members" class="board-tab" style="text-decoration:none;">
-            🧑‍🤝‍🧑 멤버 보기
+            <i data-lucide="users-2" class="li"></i> 멤버 보기
             <span class="tab-sub">가입된 멤버</span>
         </a>
     </div>
@@ -60,9 +61,9 @@
             <p id="sectionSub">함께 공부할 개발자를 찾아보세요!</p>
         </div>
         <div class="board-search-wrap fade-up" style="--fu-delay:0.2s">
-            <span class="board-search-icon">🔍</span>
+            <span class="board-search-icon"><i data-lucide="search" class="li"></i></span>
             <input type="text" id="boardSearchInput" class="board-search-input" placeholder="이름으로 검색..." autocomplete="off">
-            <button class="board-search-clear hidden" id="boardSearchClear">✕</button>
+            <button class="board-search-clear hidden" id="boardSearchClear"><i data-lucide="x" class="li"></i></button>
         </div>
         <div class="board-search-empty hidden" id="boardSearchEmpty">검색 결과가 없습니다</div>
 
@@ -76,12 +77,12 @@
         <div class="modal">
             <div class="modal-header">
                 <h2 id="modalTitle">구인 등록</h2>
-                <button class="modal-close" id="modalClose">✕</button>
+                <button class="modal-close" id="modalClose"><i data-lucide="x" class="li"></i></button>
             </div>
             <div class="modal-body">
                 <div class="image-upload-wrap">
                     <div class="image-preview-circle" id="imagePreviewCircle">
-                        <span class="photo-icon">📷</span>
+                        <span class="photo-icon"><i data-lucide="camera" class="li"></i></span>
                     </div>
                     <input type="file" id="imageInput" accept="image/*" hidden>
                     <button type="button" class="change-photo-btn" id="changePhotoBtn">사진 선택</button>
@@ -129,18 +130,18 @@
         <div class="modal">
             <div class="modal-header">
                 <h2 id="teamModalTitle">팀 만들기</h2>
-                <button class="modal-close" id="teamModalClose">✕</button>
+                <button class="modal-close" id="teamModalClose"><i data-lucide="x" class="li"></i></button>
             </div>
             <div class="modal-body">
                 <!-- 팀 이미지 -->
                 <div class="image-upload-wrap">
                     <div class="image-preview-circle" id="teamImagePreview">
-                        <span class="photo-icon">📷</span>
+                        <span class="photo-icon"><i data-lucide="camera" class="li"></i></span>
                     </div>
                     <input type="file" id="teamImageInput" accept="image/*" hidden>
                     <div style="display:flex;gap:8px;align-items:center;">
                         <button type="button" class="change-photo-btn" id="teamChangePhotoBtn">팀 사진 선택</button>
-                        <button type="button" class="change-photo-btn hidden" id="teamImageRemoveBtn" style="background:#fff0f0;color:#e74c3c;border-color:#f5c6cb;">🗑 사진 삭제</button>
+                        <button type="button" class="change-photo-btn hidden" id="teamImageRemoveBtn" style="background:#fff0f0;color:#e74c3c;border-color:#f5c6cb;"><i data-lucide="trash-2" class="li"></i> 사진 삭제</button>
                     </div>
                 </div>
                 <form id="teamForm">
@@ -155,10 +156,10 @@
                     <div class="form-group">
                         <label>분야</label>
                         <div style="display:flex; gap:8px; flex-wrap:wrap;" id="teamFieldBtns">
-                            <button type="button" class="team-field-select-btn" data-field="풀스택">🔧 풀스택</button>
-                            <button type="button" class="team-field-select-btn" data-field="백엔드">⚙️ 백엔드</button>
-                            <button type="button" class="team-field-select-btn" data-field="프론트엔드">🎨 프론트엔드</button>
-                            <button type="button" class="team-field-select-btn" data-field="">💻 기타</button>
+                            <button type="button" class="team-field-select-btn" data-field="풀스택"><i data-lucide="layers" class="li"></i> 풀스택</button>
+                            <button type="button" class="team-field-select-btn" data-field="백엔드"><i data-lucide="server" class="li"></i> 백엔드</button>
+                            <button type="button" class="team-field-select-btn" data-field="프론트엔드"><i data-lucide="palette" class="li"></i> 프론트엔드</button>
+                            <button type="button" class="team-field-select-btn" data-field=""><i data-lucide="code-2" class="li"></i> 기타</button>
                         </div>
                     </div>
                     <div class="form-group">
@@ -182,7 +183,7 @@
         <div class="modal">
             <div class="modal-header">
                 <h2 id="manageModalTitle">팀 관리</h2>
-                <button class="modal-close" id="manageModalClose">✕</button>
+                <button class="modal-close" id="manageModalClose"><i data-lucide="x" class="li"></i></button>
             </div>
             <div class="modal-body" id="manageModalBody">
                 <!-- JS로 채움 -->
@@ -194,8 +195,8 @@
     <div class="modal-overlay hidden" id="groupChatOverlay">
         <div class="modal" style="max-width:560px;height:80vh;display:flex;flex-direction:column;">
             <div class="modal-header">
-                <h2 id="groupChatTitle">💬 팀 채팅</h2>
-                <button class="modal-close" id="groupChatClose">✕</button>
+                <h2 id="groupChatTitle"><i data-lucide="message-circle" class="li"></i> 팀 채팅</h2>
+                <button class="modal-close" id="groupChatClose"><i data-lucide="x" class="li"></i></button>
             </div>
             <div style="display:flex;flex:1;overflow:hidden;gap:0;">
                 <!-- 멤버 사이드바 -->
@@ -206,7 +207,7 @@
                     <div style="display:flex;gap:8px;padding:12px;border-top:1px solid #f0f0f0;">
                         <input type="text" id="groupChatInput" placeholder="메시지 입력..." maxlength="500"
                             style="flex:1;padding:10px 14px;border:1.5px solid #e0e0e0;border-radius:20px;font-size:14px;outline:none;">
-                        <button id="groupChatSend" style="padding:10px 16px;background:#667eea;color:#fff;border:none;border-radius:20px;cursor:pointer;font-weight:600;">↑</button>
+                        <button id="groupChatSend" style="padding:10px 16px;background:#667eea;color:#fff;border:none;border-radius:20px;cursor:pointer;font-weight:600;display:flex;align-items:center;"><i data-lucide="send" class="li"></i></button>
                     </div>
                 </div>
             </div>
@@ -216,16 +217,16 @@
     <!-- ────── DM 패널 ────── -->
     <div class="dm-panel" id="dmPanel">
         <div class="dm-panel-header">
-            <button class="dm-back-btn hidden" id="dmBackBtn">←</button>
-            <span class="dm-panel-title" id="dmPanelTitle">💬 메시지</span>
-            <button class="dm-panel-close" id="dmPanelClose">✕</button>
+            <button class="dm-back-btn hidden" id="dmBackBtn"><i data-lucide="arrow-left" class="li"></i></button>
+            <span class="dm-panel-title" id="dmPanelTitle"><i data-lucide="message-circle" class="li"></i> 메시지</span>
+            <button class="dm-panel-close" id="dmPanelClose"><i data-lucide="x" class="li"></i></button>
         </div>
         <div class="dm-panel-body" id="dmPanelBody">
             <div class="dm-empty">대화 내용이 없습니다</div>
         </div>
         <div class="dm-input-area hidden" id="dmInputArea">
             <input type="text" class="dm-input" id="dmInput" placeholder="메시지를 입력하세요..." maxlength="500">
-            <button class="dm-send-btn" id="dmSendBtn">↑</button>
+            <button class="dm-send-btn" id="dmSendBtn"><i data-lucide="send" class="li"></i></button>
         </div>
     </div>
 
@@ -241,17 +242,21 @@
         const darkToggle = document.getElementById('darkToggle');
         if (localStorage.getItem('theme') === 'dark') {
             document.body.classList.add('dark');
-            darkToggle.textContent = '☀️';
+            darkToggle.innerHTML = '<i data-lucide="sun" class="li"></i>';
+            lucide.createIcons({ el: darkToggle });
         }
         darkToggle.addEventListener('click', () => {
             document.body.classList.toggle('dark');
             const isDark = document.body.classList.contains('dark');
-            darkToggle.textContent = isDark ? '☀️' : '🌙';
+            darkToggle.innerHTML = isDark
+                ? '<i data-lucide="sun" class="li"></i>'
+                : '<i data-lucide="moon" class="li"></i>';
+            lucide.createIcons({ el: darkToggle });
             localStorage.setItem('theme', isDark ? 'dark' : 'light');
         });
     </script>
     <footer class="site-footer">
-        <a href="https://github.com/dowan1220-ai/DevBoard" target="_blank" rel="noopener">📂 오픈소스 코드</a>
+        <a href="https://github.com/dowan1220-ai/DevBoard" target="_blank" rel="noopener"><i data-lucide="github" class="li"></i> 오픈소스 코드</a>
     </footer>
 <script>
 setInterval(async () => {
@@ -259,5 +264,6 @@ setInterval(async () => {
     if (res.status === 401 || res.status === 403) location.href = '/login';
 }, 30000);
 </script>
+<script>lucide.createIcons();</script>
 </body>
 </html>
