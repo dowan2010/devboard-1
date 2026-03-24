@@ -892,6 +892,26 @@ if (boardSearchClear) {
 }
 
 initPresets();
+
+// URL ?tab=team 파라미터로 진입한 경우 팀 탭으로 초기화
+(function () {
+    const tab = new URLSearchParams(location.search).get('tab');
+    if (tab && TAB_META[tab] && tab !== currentTab) {
+        const btn = document.querySelector(`.board-tab[data-type="${tab}"]`);
+        if (btn) {
+            document.querySelectorAll('.board-tab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentTab = tab;
+            const m = TAB_META[tab];
+            document.getElementById('pageTitle').textContent    = m.title;
+            document.getElementById('sectionTitle').textContent = m.h2;
+            document.getElementById('sectionSub').textContent   = m.sub;
+            const si = document.getElementById('boardSearchInput');
+            if (si) si.placeholder = tab === 'team' ? '팀 이름으로 검색...' : '이름으로 검색...';
+        }
+    }
+})();
+
 loadProfiles();
 
 // ─── 팀 그룹 채팅 ───
