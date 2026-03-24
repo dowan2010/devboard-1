@@ -5,6 +5,8 @@
 (function () {
     'use strict';
 
+    const ic = name => `<i data-lucide="${name}" class="li"></i>`;
+
     // ── 헬퍼 ──
     function escHtml(str) {
         const d = document.createElement('div');
@@ -27,14 +29,15 @@
         panel.id = 'notifPanel';
         panel.innerHTML = `
             <div class="notif-panel-header">
-                <span class="notif-panel-title">🔔 알림</span>
-                <button class="notif-panel-close" id="notifPanelClose">✕</button>
+                <span class="notif-panel-title">${ic('bell')} 알림</span>
+                <button class="notif-panel-close" id="notifPanelClose">${ic('x')}</button>
             </div>
             <div class="notif-panel-body" id="notifPanelBody">
                 <div class="notif-panel-empty">불러오는 중...</div>
             </div>
         `;
         document.body.appendChild(panel);
+        if (window.lucide) lucide.createIcons({ el: panel });
     }
 
     // ── 상태 ──
@@ -84,7 +87,7 @@
         notifs.forEach(n => {
             const row = document.createElement('div');
             const isView = n.notif_type === 'view';
-            const icon   = isView ? '👀' : '👋';
+            const icon   = isView ? ic('eye') : ic('user-plus');
             const msg    = isView
                 ? `<b>${escHtml(n.sender_nickname)}</b>님이 프로필을 조회했습니다`
                 : `<b>${escHtml(n.sender_nickname)}</b>님이 구인 신청을 보냈습니다`;
@@ -96,7 +99,7 @@
                     <div class="notif-panel-msg">${msg}</div>
                     <div class="notif-panel-time">${timeAgo(n.created_at)}</div>
                 </div>
-                ${!isView ? '<div style="font-size:11px;color:#888;margin-top:2px;">💬 클릭하여 메시지 보내기</div>' : ''}
+                ${!isView ? `<div style="font-size:11px;color:#888;margin-top:2px;">${ic('message-circle')} 클릭하여 메시지 보내기</div>` : ''}
             `;
             if (!isView) {
                 row.addEventListener('click', (e) => {
@@ -106,7 +109,9 @@
                 });
             }
             body.appendChild(row);
+            if (window.lucide) lucide.createIcons({ el: row });
         });
+        if (window.lucide) lucide.createIcons({ el: body });
     }
 
     // ── 뱃지 업데이트 ──

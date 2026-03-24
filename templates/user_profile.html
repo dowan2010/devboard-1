@@ -6,6 +6,7 @@
     <script>if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');</script>
     <link rel="stylesheet" href="/static/css/main.css">
     <link rel="stylesheet" href="/static/css/notif.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <title>{{ target_nickname }}님의 프로필</title>
     <style>
         .profile-page { max-width: 720px; margin: 100px auto 60px; padding: 0 20px; }
@@ -74,8 +75,8 @@
 <body>
     <div class="topbar">
         <div class="topbar-left">
-            <a href="/main" class="site-logo">💻 DevBoard</a>
-            <span class="welcome">👋 {{ user_id }}님</span>
+            <a href="/main" class="site-logo"><i data-lucide="code-2" class="li"></i> DevBoard</a>
+            <span class="welcome">{{ user_id }}님</span>
         </div>
         <nav class="topbar-nav">
             <a href="/recruit" class="nav-link">구인 게시판</a>
@@ -84,17 +85,17 @@
         </nav>
         <div class="topbar-right">
             <div class="dm-wrap" id="dmWrap">
-                <button class="dm-topbar-btn" id="dmBtn" title="DM">💬<span class="dm-unread-badge hidden" id="dmBadge"></span></button>
+                <button class="dm-topbar-btn" id="dmBtn" title="DM"><i data-lucide="message-circle" class="li"></i><span class="dm-unread-badge hidden" id="dmBadge"></span></button>
             </div>
             <div class="notif-wrap" id="notifWrap">
-                <button class="bell-btn" id="bellBtn">🔔<span class="notif-badge hidden" id="notifBadge"></span></button>
+                <button class="bell-btn" id="bellBtn"><i data-lucide="bell" class="li"></i><span class="notif-badge hidden" id="notifBadge"></span></button>
             </div>
-            <button class="darkmode-btn" id="darkToggle">🌙</button>
+            <button class="darkmode-btn" id="darkToggle"><i data-lucide="moon" class="li"></i></button>
             {% if is_admin %}
-            <a href="/admin" class="admin-link-btn">🛡️ 관리자</a>
+            <a href="/admin" class="admin-link-btn"><i data-lucide="shield" class="li"></i> 관리자</a>
             {% endif %}
             {% if not is_self %}
-            <a href="/user/{{ raw_user_id }}" class="settings-btn">👤 내 프로필</a>
+            <a href="/user/{{ raw_user_id }}" class="settings-btn"><i data-lucide="user" class="li"></i> 내 프로필</a>
             {% endif %}
             <a href="/logout" class="logout-btn">로그아웃</a>
         </div>
@@ -109,13 +110,13 @@
                 <p>{{ target_username }}</p>
             </div>
             {% if not is_self %}
-            <button class="profile-dm-btn" id="profileDmBtn">💬 메시지 보내기</button>
+            <button class="profile-dm-btn" id="profileDmBtn"><i data-lucide="message-circle" class="li"></i> 메시지 보내기</button>
             {% endif %}
         </div>
 
         <!-- 구인 게시글 -->
         <div class="profile-section">
-            <h3>📋 구인 게시글</h3>
+            <h3><i data-lucide="clipboard-list" class="li"></i> 구인 게시글</h3>
             {% if profiles %}
                 {% for p in profiles %}
                 <div class="recruit-card">
@@ -177,7 +178,7 @@
         <!-- 내 프로필 설정 (본인만) -->
         {% if is_self %}
         <div class="profile-section">
-            <h3>⚙️ 프로필 설정</h3>
+            <h3><i data-lucide="settings" class="li"></i> 프로필 설정</h3>
 
             <!-- 계정 정보 -->
             <div class="settings-field">
@@ -199,7 +200,7 @@
                     <button class="settings-save-btn" id="nickSaveBtn">저장</button>
                 </div>
                 <div class="settings-error hidden" id="nickError"></div>
-                <div class="settings-toast hidden" id="nickToast">✅ 닉네임이 변경되었습니다!</div>
+                <div class="settings-toast hidden" id="nickToast">닉네임이 변경되었습니다!</div>
             </div>
 
             <div class="settings-divider"></div>
@@ -219,7 +220,7 @@
                         value="{{ github_id }}" placeholder="예: username" maxlength="50">
                     <button class="settings-save-btn" id="socialSaveBtn">저장</button>
                 </div>
-                <div class="settings-toast hidden" id="socialToast">✅ 소셜 정보가 저장되었습니다!</div>
+                <div class="settings-toast hidden" id="socialToast">소셜 정보가 저장되었습니다!</div>
             </div>
         </div>
         {% endif %}
@@ -228,16 +229,16 @@
     <!-- DM 패널 -->
     <div class="dm-panel" id="dmPanel">
         <div class="dm-panel-header">
-            <button class="dm-back-btn hidden" id="dmBackBtn">←</button>
-            <span class="dm-panel-title" id="dmPanelTitle">💬 메시지</span>
-            <button class="dm-panel-close" id="dmPanelClose">✕</button>
+            <button class="dm-back-btn hidden" id="dmBackBtn"><i data-lucide="arrow-left" class="li"></i></button>
+            <span class="dm-panel-title" id="dmPanelTitle"><i data-lucide="message-circle" class="li"></i> 메시지</span>
+            <button class="dm-panel-close" id="dmPanelClose"><i data-lucide="x" class="li"></i></button>
         </div>
         <div class="dm-panel-body" id="dmPanelBody">
             <div class="dm-empty">대화 내용이 없습니다</div>
         </div>
         <div class="dm-input-area hidden" id="dmInputArea">
             <input type="text" class="dm-input" id="dmInput" placeholder="메시지를 입력하세요..." maxlength="500">
-            <button class="dm-send-btn" id="dmSendBtn">↑</button>
+            <button class="dm-send-btn" id="dmSendBtn"><i data-lucide="send" class="li"></i></button>
         </div>
     </div>
 
@@ -265,12 +266,14 @@
         const darkToggle = document.getElementById('darkToggle');
         if (localStorage.getItem('theme') === 'dark') {
             document.body.classList.add('dark');
-            darkToggle.textContent = '☀️';
+            darkToggle.innerHTML = '<i data-lucide="sun" class="li"></i>';
+            lucide.createIcons({ el: darkToggle });
         }
         darkToggle.addEventListener('click', () => {
             document.body.classList.toggle('dark');
             const isDark = document.body.classList.contains('dark');
-            darkToggle.textContent = isDark ? '☀️' : '🌙';
+            darkToggle.innerHTML = isDark ? '<i data-lucide="sun" class="li"></i>' : '<i data-lucide="moon" class="li"></i>';
+            lucide.createIcons({ el: darkToggle });
             localStorage.setItem('theme', isDark ? 'dark' : 'light');
         });
 
@@ -334,5 +337,6 @@ setInterval(async () => {
     if (res.status === 401 || res.status === 403) location.href = '/login';
 }, 30000);
 </script>
+<script>lucide.createIcons();</script>
 </body>
 </html>

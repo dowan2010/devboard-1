@@ -6,13 +6,14 @@
     <link rel="stylesheet" href="/static/css/main.css">
     <link rel="stylesheet" href="/static/css/notice.css">
     <link rel="stylesheet" href="/static/css/notif.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <title>공지사항</title>
 </head>
 <body>
     <div class="topbar fade-up" style="--fu-delay:0s">
         <div class="topbar-left">
-            <a href="/main" class="site-logo">💻 DevBoard</a>
-            <span class="welcome">👋 {{ user_id }}님</span>
+            <a href="/main" class="site-logo"><i data-lucide="code-2" class="li"></i> DevBoard</a>
+            <span class="welcome">{{ user_id }}님</span>
         </div>
         <nav class="topbar-nav">
             <a href="/recruit" class="nav-link">구인 게시판</a>
@@ -21,25 +22,25 @@
         </nav>
         <div class="topbar-center">
             <div class="search-wrap">
-                <span class="search-icon">🔍</span>
+                <span class="search-icon"><i data-lucide="search" class="li"></i></span>
                 <input type="text" class="search-input" placeholder="게시판·멤버 검색...">
             </div>
         </div>
         <div class="topbar-right">
             <div class="dm-wrap" id="dmWrap">
-                <button class="dm-topbar-btn" id="dmBtn" title="DM">💬<span class="dm-unread-badge hidden" id="dmBadge"></span></button>
+                <button class="dm-topbar-btn" id="dmBtn" title="DM"><i data-lucide="message-circle" class="li"></i><span class="dm-unread-badge hidden" id="dmBadge"></span></button>
             </div>
             <div class="notif-wrap" id="notifWrap">
-                <button class="bell-btn" id="bellBtn">🔔<span class="notif-badge hidden" id="notifBadge"></span></button>
+                <button class="bell-btn" id="bellBtn"><i data-lucide="bell" class="li"></i><span class="notif-badge hidden" id="notifBadge"></span></button>
             </div>
-            <button class="darkmode-btn" title="다크모드" id="darkToggle">🌙</button>
+            <button class="darkmode-btn" title="다크모드" id="darkToggle"><i data-lucide="moon" class="li"></i></button>
             {% if is_admin %}
-            <a href="/admin" class="admin-link-btn">🛡️ 관리자</a>
+            <a href="/admin" class="admin-link-btn"><i data-lucide="shield" class="li"></i> 관리자</a>
             {% endif %}
             {% if user_id == '게스트' %}
             <a href="/login_page" class="login-hint-btn">로그인이 안되어있다면?</a>
             {% else %}
-            <a href="/user/{{ raw_user_id }}" class="settings-btn">👤 내 프로필</a>
+            <a href="/user/{{ raw_user_id }}" class="settings-btn"><i data-lucide="user" class="li"></i> 내 프로필</a>
             <a href="/logout" class="logout-btn">로그아웃</a>
             {% endif %}
         </div>
@@ -47,7 +48,7 @@
 
     <div class="notice-container fade-up" style="--fu-delay:0.08s">
         <div class="notice-header">
-            <h2>📋 공지사항</h2>
+            <h2><i data-lucide="clipboard-list" class="li"></i> 공지사항</h2>
             <p class="notice-sub">운영자가 올린 공지를 확인하세요</p>
         </div>
         <div id="noticeList">
@@ -60,14 +61,14 @@
         <div class="notice-detail-modal">
             <div class="notice-detail-header">
                 <div class="notice-detail-meta" id="detailMeta"></div>
-                <button class="notice-detail-close" id="detailClose">✕</button>
+                <button class="notice-detail-close" id="detailClose"><i data-lucide="x" class="li"></i></button>
             </div>
             <h2 class="notice-detail-title" id="detailTitle"></h2>
             <div class="notice-detail-content" id="detailContent"></div>
 
             <!-- 댓글 섹션 -->
             <div class="notice-comment-section">
-                <div class="notice-comment-title">💬 댓글 <span id="commentCount">0</span></div>
+                <div class="notice-comment-title"><i data-lucide="message-square" class="li"></i> 댓글 <span id="commentCount">0</span></div>
                 <div id="commentList" class="notice-comment-list"></div>
                 {% if current_user %}
                 <div class="notice-comment-input-wrap">
@@ -86,12 +87,14 @@
         const darkToggle = document.getElementById('darkToggle');
         if (localStorage.getItem('theme') === 'dark') {
             document.body.classList.add('dark');
-            darkToggle.textContent = '☀️';
+            darkToggle.innerHTML = '<i data-lucide="sun" class="li"></i>';
+            lucide.createIcons({ el: darkToggle });
         }
         darkToggle.addEventListener('click', () => {
             document.body.classList.toggle('dark');
             const isDark = document.body.classList.contains('dark');
-            darkToggle.textContent = isDark ? '☀️' : '🌙';
+            darkToggle.innerHTML = isDark ? '<i data-lucide="sun" class="li"></i>' : '<i data-lucide="moon" class="li"></i>';
+            lucide.createIcons({ el: darkToggle });
             localStorage.setItem('theme', isDark ? 'dark' : 'light');
         });
 
@@ -113,10 +116,11 @@
             if (!notices.length) {
                 list.innerHTML = `
                     <div class="notice-empty">
-                        <span class="notice-empty-icon">🔔</span>
+                        <span class="notice-empty-icon"><i data-lucide="bell" class="li"></i></span>
                         <p>아직 공지사항이 없습니다</p>
                         <span class="notice-empty-sub">새로운 공지가 올라오면 여기서 확인하세요!</span>
                     </div>`;
+                lucide.createIcons({ el: list });
                 return;
             }
             list.innerHTML = '';
@@ -126,7 +130,7 @@
                 card.style.setProperty('--fu-delay', Math.min(i, 10) * 0.05 + 's');
                 card.innerHTML = `
                     <div class="notice-card-left">
-                        ${n.is_pinned ? '<span class="notice-pin">📌 고정</span>' : ''}
+                        ${n.is_pinned ? '<span class="notice-pin"><i data-lucide="pin" class="li"></i> 고정</span>' : ''}
                         <div class="notice-card-title">${escHtml(n.title)}</div>
                         <div class="notice-card-preview">${escHtml(n.content)}</div>
                     </div>
@@ -138,6 +142,7 @@
                 card.addEventListener('click', () => openDetail(n));
                 list.appendChild(card);
             });
+            lucide.createIcons({ el: list });
         }
 
         // 공지 목록 로드 (새 공지 작성 후 갱신용)
@@ -278,15 +283,15 @@
     <div class="dm-overlay" id="dmOverlay"></div>
     <div class="dm-panel" id="dmPanel">
         <div class="dm-panel-header">
-            <button class="dm-back-btn hidden" id="dmBackBtn">←</button>
-            <span class="dm-panel-title" id="dmPanelTitle">💬 메시지</span>
-            <button class="dm-panel-close" id="dmPanelClose">✕</button>
+            <button class="dm-back-btn hidden" id="dmBackBtn"><i data-lucide="arrow-left" class="li"></i></button>
+            <span class="dm-panel-title" id="dmPanelTitle"><i data-lucide="message-circle" class="li"></i> 메시지</span>
+            <button class="dm-panel-close" id="dmPanelClose"><i data-lucide="x" class="li"></i></button>
         </div>
         <div class="dm-panel-body" id="dmPanelBody"></div>
     </div>
     <script src="/static/js/dm.js"></script>
     <footer class="site-footer">
-        <a href="https://github.com/dowan1220-ai/DevBoard" target="_blank" rel="noopener">📂 오픈소스 코드</a>
+        <a href="https://github.com/dowan1220-ai/DevBoard" target="_blank" rel="noopener"><i data-lucide="github" class="li"></i> 오픈소스 코드</a>
     </footer>
 <script>
 setInterval(async () => {
@@ -294,5 +299,6 @@ setInterval(async () => {
     if (res.status === 401 || res.status === 403) location.href = '/login';
 }, 30000);
 </script>
+<script>lucide.createIcons();</script>
 </body>
 </html>

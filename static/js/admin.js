@@ -1,3 +1,5 @@
+const ic = name => `<i data-lucide="${name}" class="li"></i>`;
+
 'use strict';
 
 // ── 탭 전환 ──
@@ -61,12 +63,12 @@ function renderNotices(notices) {
         item.className = 'notice-item';
         const actionsHtml = IS_SUPERADMIN
             ? `<div class="notice-item-actions">
-                <button class="btn-neutral" data-notice-id="${n.id}">✏️ 수정</button>
-                <button class="btn-danger"  data-delete-id="${n.id}">🗑 삭제</button>
+                <button class="btn-neutral" data-notice-id="${n.id}">${ic('pencil')} 수정</button>
+                <button class="btn-danger"  data-delete-id="${n.id}">${ic('trash-2')} 삭제</button>
                </div>`
             : '';
         item.innerHTML = `
-            <div class="notice-pin-icon ${n.is_pinned ? 'pinned' : ''}">📌</div>
+            <div class="notice-pin-icon ${n.is_pinned ? 'pinned' : ''}">${ic('pin')}</div>
             <div class="notice-item-body">
                 <div class="notice-item-title">
                     ${n.is_pinned ? '<span class="notice-pin-badge">고정</span>' : ''}
@@ -83,6 +85,7 @@ function renderNotices(notices) {
         }
         list.appendChild(item);
     });
+    lucide.createIcons({ el: list });
 }
 
 async function loadNotices() {
@@ -206,12 +209,12 @@ function renderUsers(users) {
     users.forEach(u => {
         const tr = document.createElement('tr');
         const lockLabel = u.is_locked
-            ? `<span class="status-badge locked">🔒 잠금</span>`
-            : `<span class="status-badge normal">✅ 정상</span>`;
+            ? `<span class="status-badge locked">${ic('lock')} 잠금</span>`
+            : `<span class="status-badge normal">${ic('check')} 정상</span>`;
         const adminLabel = u.is_owner
-            ? `<span class="admin-badge-cell is-admin">👑 총괄 관리자</span>`
+            ? `<span class="admin-badge-cell is-admin">${ic('crown')} 총괄 관리자</span>`
             : u.is_admin
-                ? `<span class="admin-badge-cell is-admin">🛡️ 관리자</span>`
+                ? `<span class="admin-badge-cell is-admin">${ic('shield')} 관리자</span>`
                 : `<span class="admin-badge-cell not-admin">일반</span>`;
 
         const isSelf = u.username === CURRENT_ADMIN_ID;
@@ -220,14 +223,14 @@ function renderUsers(users) {
             : IS_SUPERADMIN
                 ? `<div class="action-btns">
                     ${u.is_locked
-                        ? `<button class="btn-success" onclick="unlockUser('${escAttr(u.username)}')">🔓 잠금해제</button>`
-                        : `<button class="btn-warn" onclick="openLockModal('${escAttr(u.username)}', '${escAttr(u.nickname)}')">🔒 잠금</button>`
+                        ? `<button class="btn-success" onclick="unlockUser('${escAttr(u.username)}')">${ic('unlock')} 잠금해제</button>`
+                        : `<button class="btn-warn" onclick="openLockModal('${escAttr(u.username)}', '${escAttr(u.nickname)}')">${ic('lock')} 잠금</button>`
                     }
                     ${u.is_admin
                         ? (IS_OWNER ? `<button class="btn-neutral" onclick="toggleAdmin('${escAttr(u.username)}')">관리자 해제</button>` : '')
                         : `<button class="btn-neutral" onclick="toggleAdmin('${escAttr(u.username)}')">관리자 지정</button>`
                     }
-                    <button class="btn-danger" onclick="deleteUser('${escAttr(u.username)}', '${escAttr(u.nickname)}')">🗑 삭제</button>
+                    <button class="btn-danger" onclick="deleteUser('${escAttr(u.username)}', '${escAttr(u.nickname)}')">${ic('trash-2')} 삭제</button>
                    </div>`
                 : `<span class="self-label">조회 전용</span>`;
 
@@ -242,6 +245,7 @@ function renderUsers(users) {
         `;
         tbody.appendChild(tr);
     });
+    lucide.createIcons({ el: tbody });
 }
 
 // 검색
@@ -322,9 +326,9 @@ function renderMemberCards(users, grid) {
             <div class="member-card-info">
                 <div class="member-card-name">${escHtml(u.nickname)}${isSelf ? ' <span class="self-tag">나</span>' : ''}</div>
                 <div class="member-card-id">${escHtml(u.username)}</div>
-                ${u.is_locked ? '<div class="member-card-locked">🔒 잠금</div>' : ''}
+                ${u.is_locked ? `<div class="member-card-locked">${ic('lock')} 잠금</div>` : ''}
             </div>
-            ${!isSelf ? `<div class="member-dm-hint">💬 클릭해서 대화하기</div>` : ''}
+            ${!isSelf ? `<div class="member-dm-hint">${ic('message-circle')} 클릭해서 대화하기</div>` : ''}
         `;
         if (!isSelf) {
             card.style.cursor = 'pointer';
@@ -332,6 +336,7 @@ function renderMemberCards(users, grid) {
         }
         grid.appendChild(card);
     });
+    lucide.createIcons({ el: grid });
 }
 
 async function loadMembers() {
