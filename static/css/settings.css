@@ -353,3 +353,8 @@ body.dark .logout-btn:hover {
 .dark .social-input { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: #eee; }
 .dark .social-input:focus { border-color: #818cf8; background: rgba(255,255,255,0.08); }
 .dark .social-label { color: #666; }
+
+/* ── 다크모드 아이콘 버튼 ── */
+body.dark .darkmode-btn,
+body.dark .site-logo { color: #ccc; }
+body.dark .darkmode-btn:hover { color: #fff; }

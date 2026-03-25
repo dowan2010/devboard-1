@@ -825,3 +825,15 @@ body.dark .dm-input-area { border-color: rgba(255,255,255,0.07); }
 body.dark .dm-input { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); color: #e0e0e0; }
 body.dark .dm-input:focus { border-color: #9b9ef7; }
 body.dark .dm-empty { color: #555; }
+
+/* ── 다크모드 topbar 아이콘 버튼 ── */
+body.dark .dm-topbar-btn,
+body.dark .bell-btn,
+body.dark .darkmode-btn,
+body.dark .dm-back-btn,
+body.dark .dm-panel-close,
+body.dark .admin-logo { color: #ccc; }
+body.dark .dm-topbar-btn:hover,
+body.dark .bell-btn:hover,
+body.dark .darkmode-btn:hover { color: #fff; }
+body.dark .dm-send-btn { background: rgba(91,94,247,0.85); color: #fff; }

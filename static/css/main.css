@@ -469,6 +469,17 @@ body.dark .nav-link {
     color: #ccc;
 }
 
+/* 다크모드 topbar 아이콘 버튼 */
+body.dark .dm-topbar-btn,
+body.dark .bell-btn,
+body.dark .darkmode-btn,
+body.dark .dm-back-btn,
+body.dark .dm-panel-close,
+body.dark .dm-panel-title { color: #ccc; }
+body.dark .dm-topbar-btn:hover,
+body.dark .bell-btn:hover,
+body.dark .darkmode-btn:hover { color: #fff; }
+
 body.dark .search-wrap {
     background: rgba(255,255,255,0.08);
     border-color: rgba(255,255,255,0.15);

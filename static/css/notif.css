@@ -151,6 +151,26 @@ body.dark .settings-btn:hover { background: rgba(255,255,255,0.08); color: #90ca
     margin-top: 4px;
 }
 
+/* ── 다크모드 아이콘 색상 (topbar 버튼) ── */
+body.dark .dm-topbar-btn,
+body.dark .bell-btn,
+body.dark .darkmode-btn,
+body.dark .dm-back-btn,
+body.dark .dm-panel-close,
+body.dark .dm-panel-title,
+body.dark .dm-send-btn,
+body.dark .site-logo,
+body.dark .admin-link-btn,
+body.dark .settings-btn,
+body.dark .logout-btn { color: #ccc; }
+
+body.dark .dm-topbar-btn:hover,
+body.dark .bell-btn:hover,
+body.dark .darkmode-btn:hover { color: #fff; }
+
+body.dark .dm-send-btn { background: rgba(91,94,247,0.85); color: #fff; }
+body.dark .dm-conv-unread { background: rgba(91,94,247,0.85); }
+
 /* ── 다크모드 ── */
 body.dark .notif-panel {
     background: #1e1e32;
