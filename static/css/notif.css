@@ -186,6 +186,7 @@ body.dark .notif-panel-row { border-bottom-color: rgba(255,255,255,0.05); }
 body.dark .notif-panel-row:hover { background: rgba(255,255,255,0.04); }
 body.dark .notif-panel-unread { background: rgba(91,94,247,0.12); }
 body.dark .notif-panel-unread:hover { background: rgba(91,94,247,0.18); }
-body.dark .notif-panel-msg { color: #ccc; }
+body.dark .notif-panel-icon { color: #9b9ef7; }
+body.dark .notif-panel-msg  { color: #ccc; }
 body.dark .notif-panel-time { color: #666; }
 body.dark .notif-panel-empty { color: #555; }

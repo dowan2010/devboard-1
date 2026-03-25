@@ -484,10 +484,34 @@ body.dark .search-wrap {
     background: rgba(255,255,255,0.08);
     border-color: rgba(255,255,255,0.15);
 }
+body.dark .search-icon { color: #aaa; }
+body.dark .search-input { color: #eee; }
+body.dark .search-dropdown { background: #1e2035; border-color: rgba(255,255,255,0.08); }
+body.dark .search-drop-row { border-bottom-color: rgba(255,255,255,0.05); }
+body.dark .search-drop-row:hover { background: rgba(91,94,247,0.1); }
+body.dark .search-drop-name { color: #e0e0e0; }
+body.dark .search-drop-empty { color: #555; }
 
-body.dark .search-input {
-    color: #eee;
+/* ── 다크모드 DM 패널 ── */
+body.dark .dm-panel { background: #1e1e32; }
+body.dark .dm-panel-header,
+body.dark .dm-input-area   { border-color: rgba(255,255,255,0.07); }
+body.dark .dm-panel-title  { color: #ddd; }
+body.dark .dm-panel-body   { background: #1e1e32; }
+body.dark .dm-conv-row     { border-bottom-color: rgba(255,255,255,0.05); }
+body.dark .dm-conv-row:hover { background: rgba(91,94,247,0.08); }
+body.dark .dm-conv-name    { color: #ddd; }
+body.dark .dm-conv-last    { color: #666; }
+body.dark .dm-msg-other .dm-msg-bubble { background: #2d2d4a; color: #ddd; }
+body.dark .dm-input {
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.12);
+    color: #e0e0e0;
 }
+body.dark .dm-input::placeholder { color: #555; }
+body.dark .dm-input:focus  { border-color: #9b9ef7; }
+body.dark .dm-empty,
+body.dark .dm-loading      { color: #555; }
 
 body.dark .nav-btn {
     background: rgba(255,255,255,0.08);
