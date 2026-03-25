@@ -1394,6 +1394,7 @@ def get_notifications():
         "notifications": [
             {
                 "id": n.id,
+                "sender_id": n.sender_id,
                 "sender_nickname": n.sender_nickname,
                 "profile_name": n.profile_name,
                 "notif_type": n.notif_type,
