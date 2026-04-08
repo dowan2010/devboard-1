@@ -14,6 +14,14 @@
 }
 
 /* ── 페이지 레이아웃 ── */
+/* showcase 페이지 전체 배경 - 그라데이션 body 위에 깔끔하게 */
+body:has(.showcase-page) {
+    background: #f4f4fb;
+}
+body.dark:has(.showcase-page) {
+    background: #1a1a2e;
+}
+
 .showcase-page {
     max-width: 1100px;
     margin: 0 auto;
@@ -31,7 +39,7 @@
 .showcase-title {
     font-size: 26px;
     font-weight: 900;
-    color: #222;
+    color: #1a1a2e;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -39,7 +47,7 @@
 .showcase-title .li svg { width: 26px; height: 26px; stroke: #5b5ef7; }
 .showcase-sub {
     font-size: 14px;
-    color: #888;
+    color: #555;
     margin-top: 4px;
 }
 .showcase-add-btn {
@@ -75,7 +83,7 @@
     border-radius: 999px;
     border: none;
     background: transparent;
-    color: #888;
+    color: #555;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
@@ -98,8 +106,9 @@
     grid-column: 1/-1;
     text-align: center;
     padding: 60px 0;
-    color: #aaa;
+    color: #666;
     font-size: 15px;
+    font-weight: 600;
 }
 
 /* ── 프로젝트 카드 ── */
