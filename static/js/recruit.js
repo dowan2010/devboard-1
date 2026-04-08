@@ -19,13 +19,22 @@ let cachedProfiles = [];
 let cachedTeams    = [];
 
 function escapeHtml(str) {
-    const d = document.createElement('div');
-    d.textContent = str;
-    return d.innerHTML;
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
 }
 
-// 아이콘 헬퍼 (Lucide)
-const ic = name => `<i data-lucide="${name}" class="li"></i>`;
+// 아이콘 헬퍼 (Lucide) - SVG 캐싱으로 createIcons 반복 호출 제거
+const _icCache = {};
+function ic(name) {
+    if (_icCache[name]) return _icCache[name];
+    const tmp = document.createElement('span');
+    tmp.innerHTML = `<i data-lucide="${name}" class="li"></i>`;
+    lucide.createIcons({ el: tmp });
+    return (_icCache[name] = tmp.innerHTML);
+}
 
 const DEV_FIELD_STYLE = {
     '풀스택':    { bg:'rgba(91,94,247,0.12)',  color:'#5b5ef7', icon:'layers' },
@@ -877,17 +886,19 @@ function renderFiltered() {
         });
         showEmpty(empty, query, filtered.length);
     }
-    lucide.createIcons({ el: grid });
+    // ic()가 SVG 캐싱 방식이므로 createIcons() 불필요
 }
 
-// ─── 검색 입력 이벤트 ───
+// ─── 검색 입력 이벤트 (디바운스 150ms) ───
 const boardSearchInput = document.getElementById('boardSearchInput');
 const boardSearchClear = document.getElementById('boardSearchClear');
+let _searchTimer = null;
 if (boardSearchInput) {
     boardSearchInput.addEventListener('input', () => {
         const hasVal = boardSearchInput.value.length > 0;
         if (boardSearchClear) boardSearchClear.classList.toggle('hidden', !hasVal);
-        renderFiltered();
+        clearTimeout(_searchTimer);
+        _searchTimer = setTimeout(renderFiltered, 150);
     });
 }
 if (boardSearchClear) {
