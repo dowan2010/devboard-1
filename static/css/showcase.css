@@ -645,42 +645,75 @@
 .sc-comment-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ── 다크모드 ── */
+body.dark .showcase-page { color: #e0e0e0; }
 body.dark .showcase-title { color: #e0e0e0; }
-body.dark .showcase-sub { color: #666; }
+body.dark .showcase-sub { color: #777; }
+
+/* 필터 탭 */
 body.dark .sc-tab { color: #777; }
 body.dark .sc-tab:hover:not(.active) { background: rgba(91,94,247,0.12); color: #9b9ef7; }
+
+/* 카드 */
 body.dark .sc-card { background: #1e2035; border-color: rgba(255,255,255,0.07); }
 body.dark .sc-card-title { color: #e0e0e0; }
-body.dark .sc-card-desc { color: #888; }
+body.dark .sc-card-desc { color: #999; }
+body.dark .sc-card-author { color: #666; }
 body.dark .sc-card-footer { border-color: rgba(255,255,255,0.07); }
+body.dark .sc-stat { color: #666; }
+body.dark .sc-stat.liked { color: #e74c3c; }
 body.dark .sc-card-thumb { background: linear-gradient(135deg, #1a1a30, #252548); }
 body.dark .sc-card-thumb-placeholder { color: #5b5ef7; }
+body.dark .sc-stack-chip { background: rgba(91,94,247,0.15); color: #9b9ef7; }
+body.dark .sc-loading, body.dark .sc-empty { color: #555; }
+
+/* 등록/수정 모달 */
 body.dark .sc-modal { background: #1e2035; }
 body.dark .sc-modal-header { background: #1e2035; border-color: rgba(255,255,255,0.08); }
 body.dark .sc-modal-title { color: #e0e0e0; }
 body.dark .sc-modal-close { color: #777; }
 body.dark .sc-modal-close:hover { background: rgba(255,255,255,0.07); color: #ccc; }
 body.dark .sc-label { color: #aaa; }
+body.dark .sc-char-count { color: #666; }
 body.dark .sc-input, body.dark .sc-textarea {
     background: rgba(255,255,255,0.05);
     border-color: rgba(255,255,255,0.1);
     color: #e0e0e0;
 }
+body.dark .sc-input::placeholder, body.dark .sc-textarea::placeholder { color: #555; }
 body.dark .sc-input:focus, body.dark .sc-textarea:focus { border-color: #5b5ef7; }
 body.dark .sc-cat-btn { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.12); color: #aaa; }
 body.dark .sc-cat-btn.active { border-color: #5b5ef7; background: rgba(91,94,247,0.15); color: #9b9ef7; }
-body.dark .sc-thumb-preview { background: linear-gradient(135deg, #1a1a30, #252548); }
+body.dark .sc-thumb-preview { background: linear-gradient(135deg, #1a1a30, #252548); color: #5b5ef7; }
+body.dark .sc-stack-tag { background: rgba(91,94,247,0.15); color: #9b9ef7; }
+body.dark .sc-stack-tag-del { color: #666; }
+
+/* 상세 모달 */
 body.dark .sc-detail-thumb { background: linear-gradient(135deg, #1a1a30, #252548); }
+body.dark .sc-detail-content { background: #1e2035; }
 body.dark .sc-detail-title { color: #e0e0e0; }
 body.dark .sc-detail-desc { color: #aaa; }
-body.dark .sc-like-btn { background: #1e2035; border-color: rgba(255,255,255,0.1); color: #888; }
-body.dark .sc-edit-btn { background: #1e2035; border-color: rgba(255,255,255,0.1); color: #aaa; }
-body.dark .sc-delete-btn { background: #1e2035; }
-body.dark .sc-comments-title { color: #ccc; border-color: rgba(255,255,255,0.07); }
-body.dark .sc-comment-text { color: #aaa; }
-body.dark .sc-comment-author { color: #ccc; }
-body.dark .sc-comment-input { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: #e0e0e0; }
 body.dark .sc-detail-author { color: #777; }
+body.dark .sc-like-btn { background: #1e2035; border-color: rgba(255,255,255,0.1); color: #888; }
+body.dark .sc-like-btn.liked { border-color: #e74c3c; color: #e74c3c; background: rgba(231,76,60,0.1); }
+body.dark .sc-edit-btn { background: #1e2035; border-color: rgba(255,255,255,0.1); color: #aaa; }
+body.dark .sc-delete-btn { background: #1e2035; border-color: rgba(231,76,60,0.5); color: #e74c3c; }
+body.dark .sc-detail-close { background: rgba(255,255,255,0.08); color: #ccc; }
+body.dark .sc-detail-close:hover { background: rgba(255,255,255,0.14); }
+
+/* 댓글 */
+body.dark .sc-comments-title { color: #ccc; border-color: rgba(255,255,255,0.07); }
+body.dark .sc-comment-author { color: #ccc; }
+body.dark .sc-comment-time { color: #555; }
+body.dark .sc-comment-text { color: #aaa; }
+body.dark .sc-comment-del { color: #555; }
+body.dark .sc-comment-empty { color: #555; }
+body.dark .sc-comment-input {
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(255,255,255,0.1);
+    color: #e0e0e0;
+}
+body.dark .sc-comment-input::placeholder { color: #555; }
+body.dark .sc-comment-input:focus { border-color: #5b5ef7; }
 
 /* ── fade-up 애니메이션 ── */
 .fade-up {
