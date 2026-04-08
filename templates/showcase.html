@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/notif.css">
+    <link rel="stylesheet" href="/static/css/showcase.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <title>쇼케이스</title>
+</head>
+<body>
+    <!-- 상단바 -->
+    <div class="topbar fade-up" style="--fu-delay:0s">
+        <div class="topbar-left">
+            <a href="/main" class="site-logo"><i data-lucide="code-2" class="li"></i> DevBoard</a>
+            <span class="welcome">{{ user_id }}님</span>
+        </div>
+        <nav class="topbar-nav">
+            <a href="/recruit" class="nav-link">구인 게시판</a>
+            <a href="/notice" class="nav-link">공지사항</a>
+            <a href="/members" class="nav-link">멤버 보기</a>
+            <a href="/showcase" class="nav-link active">쇼케이스</a>
+        </nav>
+        <div class="topbar-right">
+            <div class="dm-wrap" id="dmWrap">
+                <button class="dm-topbar-btn" id="dmBtn" title="DM"><i data-lucide="message-circle" class="li"></i><span class="dm-unread-badge hidden" id="dmBadge"></span></button>
+            </div>
+            <div class="notif-wrap" id="notifWrap">
+                <button class="bell-btn" id="bellBtn"><i data-lucide="bell" class="li"></i><span class="notif-badge hidden" id="notifBadge"></span></button>
+            </div>
+            <button class="darkmode-btn" title="다크모드" id="darkToggle"><i data-lucide="moon" class="li"></i></button>
+            {% if is_admin %}
+            <a href="/admin" class="admin-link-btn"><i data-lucide="shield" class="li"></i> 관리자</a>
+            {% endif %}
+            <span class="user-name">{{ user_id }}</span>
+            <a href="/user/{{ raw_user_id }}" class="profile-link-btn"><i data-lucide="user" class="li"></i> 내 프로필</a>
+            <a href="/logout" class="logout-btn">로그아웃</a>
+        </div>
+    </div>
+
+    <!-- 메인 컨텐츠 -->
+    <div class="showcase-page">
+        <!-- 헤더 -->
+        <div class="showcase-header fade-up" style="--fu-delay:0.08s">
+            <div class="showcase-header-text">
+                <h1 class="showcase-title"><i data-lucide="rocket" class="li"></i> 쇼케이스</h1>
+                <p class="showcase-sub">소마고 학생들이 만든 프로젝트를 공유하고 피드백을 나눠보세요!</p>
+            </div>
+            <button class="showcase-add-btn" id="addProjectBtn">
+                <i data-lucide="plus" class="li"></i> 프로젝트 등록
+            </button>
+        </div>
+
+        <!-- 필터 탭 -->
+        <div class="showcase-filter fade-up" style="--fu-delay:0.12s">
+            <button class="sc-tab active" data-cat="전체">전체</button>
+            <button class="sc-tab" data-cat="웹사이트"><i data-lucide="globe" class="li"></i> 웹사이트</button>
+            <button class="sc-tab" data-cat="앱"><i data-lucide="smartphone" class="li"></i> 앱</button>
+            <button class="sc-tab" data-cat="게임"><i data-lucide="gamepad-2" class="li"></i> 게임</button>
+            <button class="sc-tab" data-cat="기타"><i data-lucide="box" class="li"></i> 기타</button>
+        </div>
+
+        <!-- 프로젝트 그리드 -->
+        <div class="showcase-grid" id="showcaseGrid">
+            <div class="sc-loading">불러오는 중...</div>
+        </div>
+    </div>
+
+    <!-- 프로젝트 등록/수정 모달 -->
+    <div class="sc-modal-overlay hidden" id="projectModalOverlay">
+        <div class="sc-modal" id="projectModal">
+            <div class="sc-modal-header">
+                <span class="sc-modal-title" id="projectModalTitle"><i data-lucide="rocket" class="li"></i> 프로젝트 등록</span>
+                <button class="sc-modal-close" id="projectModalClose"><i data-lucide="x" class="li"></i></button>
+            </div>
+            <div class="sc-modal-body">
+                <!-- 썸네일 -->
+                <div class="sc-thumb-wrap">
+                    <div class="sc-thumb-preview" id="thumbPreview">
+                        <i data-lucide="image" class="li"></i>
+                        <span>썸네일 이미지</span>
+                    </div>
+                    <div class="sc-thumb-btns">
+                        <label class="sc-thumb-select-btn">
+                            <i data-lucide="upload" class="li"></i> 이미지 선택
+                            <input type="file" id="thumbInput" accept="image/*" style="display:none">
+                        </label>
+                        <button class="sc-thumb-remove-btn hidden" id="thumbRemoveBtn">
+                            <i data-lucide="trash-2" class="li"></i> 삭제
+                        </button>
+                    </div>
+                </div>
+
+                <form id="projectForm">
+                    <div class="sc-form-group">
+                        <label class="sc-label">프로젝트 이름 <span class="req">*</span></label>
+                        <input type="text" class="sc-input" id="scTitle" placeholder="프로젝트 이름을 입력하세요" maxlength="50">
+                    </div>
+                    <div class="sc-form-group">
+                        <label class="sc-label">설명 <span class="sc-char-count" id="descCharCount">0/500</span></label>
+                        <textarea class="sc-textarea" id="scDesc" placeholder="프로젝트 소개, 기능, 만든 이유 등을 적어주세요" maxlength="500" rows="4"></textarea>
+                    </div>
+                    <div class="sc-form-group">
+                        <label class="sc-label">링크 (URL)</label>
+                        <input type="url" class="sc-input" id="scUrl" placeholder="https://...">
+                    </div>
+                    <div class="sc-form-group">
+                        <label class="sc-label">카테고리</label>
+                        <div class="sc-cat-btns" id="scCatBtns">
+                            <button type="button" class="sc-cat-btn active" data-cat="웹사이트">🌐 웹사이트</button>
+                            <button type="button" class="sc-cat-btn" data-cat="앱">📱 앱</button>
+                            <button type="button" class="sc-cat-btn" data-cat="게임">🎮 게임</button>
+                            <button type="button" class="sc-cat-btn" data-cat="기타">📦 기타</button>
+                        </div>
+                    </div>
+                    <div class="sc-form-group">
+                        <label class="sc-label">기술 스택</label>
+                        <div class="sc-stack-input-row">
+                            <input type="text" class="sc-input" id="scStackInput" placeholder="예: Python, React, Flask">
+                            <button type="button" class="sc-stack-add-btn" id="scStackAdd"><i data-lucide="plus" class="li"></i></button>
+                        </div>
+                        <div class="sc-stack-tags" id="scStackTags"></div>
+                    </div>
+                    <div class="sc-form-error hidden" id="scFormError"></div>
+                    <button type="submit" class="sc-submit-btn" id="scSubmitBtn">등록하기</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 프로젝트 상세 모달 -->
+    <div class="sc-modal-overlay hidden" id="detailModalOverlay">
+        <div class="sc-modal sc-modal-detail" id="detailModal">
+            <button class="sc-modal-close sc-detail-close" id="detailModalClose"><i data-lucide="x" class="li"></i></button>
+            <div class="sc-detail-body" id="detailBody"></div>
+        </div>
+    </div>
+
+    <script>
+        // 다크모드
+        if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
+        document.getElementById('darkToggle').addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+            localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+        });
+    </script>
+    <script src="/static/js/dm.js"></script>
+    <script src="/static/js/notif.js"></script>
+    <script src="/static/js/showcase.js"></script>
+    <script>lucide.createIcons();</script>
+</body>
+</html>

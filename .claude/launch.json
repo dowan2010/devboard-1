@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "DevBoard Turso",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["/Users/dg3w04/Bord-turso/main.py"],
+      "port": 4501
+    }
+  ]
+}

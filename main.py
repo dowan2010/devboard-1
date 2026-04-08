@@ -138,6 +138,36 @@ class GroupMessage(SQLModel, table=True):
     created_at: float = Field(default=0.0)
 
 
+class ShowcaseProject(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: str
+    author_nickname: str = Field(default='')
+    title: str
+    description: str = Field(default='')
+    url: str = Field(default='')
+    thumbnail: Optional[str] = Field(default=None)   # base64
+    tech_stack: str = Field(default='')              # comma separated
+    category: str = Field(default='기타')            # 웹사이트 | 앱 | 게임 | 기타
+    views: int = Field(default=0)
+    created_at: float = Field(default=0.0)
+
+
+class ShowcaseLike(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    project_id: int
+    user_id: str
+    created_at: float = Field(default=0.0)
+
+
+class ShowcaseComment(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    project_id: int = Field(index=True)
+    author_id: str
+    author_nickname: str = Field(default='')
+    content: str = Field(default='')
+    created_at: float = Field(default=0.0)
+
+
 DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///database.db")
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
@@ -180,6 +210,9 @@ with app.app_context():
             "ALTER TABLE team ADD COLUMN team_image TEXT DEFAULT NULL",
             "ALTER TABLE user ADD COLUMN discord_id VARCHAR DEFAULT NULL",
             "ALTER TABLE user ADD COLUMN github_id VARCHAR DEFAULT NULL",
+            "CREATE TABLE IF NOT EXISTS showcaseproject (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id VARCHAR NOT NULL, author_nickname VARCHAR DEFAULT '', title VARCHAR NOT NULL, description VARCHAR DEFAULT '', url VARCHAR DEFAULT '', thumbnail TEXT, tech_stack VARCHAR DEFAULT '', category VARCHAR DEFAULT '기타', views INTEGER DEFAULT 0, created_at REAL DEFAULT 0.0)",
+            "CREATE TABLE IF NOT EXISTS showcaselike (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL, user_id VARCHAR NOT NULL, created_at REAL DEFAULT 0.0)",
+            "CREATE TABLE IF NOT EXISTS showcasecomment (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL, author_id VARCHAR NOT NULL, author_nickname VARCHAR DEFAULT '', content VARCHAR DEFAULT '', created_at REAL DEFAULT 0.0)",
         ):
             try:
                 conn.execute(text(col_sql))
@@ -1724,6 +1757,241 @@ def send_group_message(team_id):
         "sender_nickname": msg.sender_nickname,
         "message": msg.message, "created_at": msg.created_at, "is_mine": True
     }}
+
+
+# ───────────── 쇼케이스 ─────────────
+
+@app.route('/showcase')
+def showcase_page():
+    if 'user_id' not in session:
+        return redirect(url_for('login_page'))
+    current_user = session['user_id']
+    nickname = session.get('nickname', current_user)
+    return render_template('showcase.html',
+        user_id=nickname,
+        raw_user_id=current_user,
+        is_admin=check_admin()
+    )
+
+
+@app.route('/api/showcase', methods=['GET'])
+def showcase_list():
+    if 'user_id' not in session:
+        return {"error": "Unauthorized"}, 401
+    current_user = session['user_id']
+    category = request.args.get('category', '')
+    try:
+        with Session(engine) as db_session:
+            q = select(ShowcaseProject).order_by(ShowcaseProject.created_at.desc())
+            if category and category != '전체':
+                q = q.where(ShowcaseProject.category == category)
+            projects = db_session.exec(q).all()
+            result = []
+            for p in projects:
+                like_count = db_session.exec(
+                    select(func.count(ShowcaseLike.id)).where(ShowcaseLike.project_id == p.id)
+                ).one()
+                comment_count = db_session.exec(
+                    select(func.count(ShowcaseComment.id)).where(ShowcaseComment.project_id == p.id)
+                ).one()
+                liked = db_session.exec(
+                    select(ShowcaseLike).where(ShowcaseLike.project_id == p.id, ShowcaseLike.user_id == current_user)
+                ).first() is not None
+                result.append({
+                    "id": p.id, "user_id": p.user_id,
+                    "author_nickname": p.author_nickname,
+                    "title": p.title, "description": p.description,
+                    "url": p.url, "thumbnail": p.thumbnail,
+                    "tech_stack": [t.strip() for t in p.tech_stack.split(',') if t.strip()],
+                    "category": p.category, "views": p.views,
+                    "like_count": like_count, "comment_count": comment_count,
+                    "liked": liked, "is_mine": p.user_id == current_user,
+                    "created_at": p.created_at,
+                })
+        return {"projects": result}
+    except Exception:
+        return {"error": "불러오는 중 오류가 발생했습니다.", "projects": []}, 500
+
+
+@app.route('/api/showcase', methods=['POST'])
+def showcase_create():
+    if 'user_id' not in session:
+        return {"error": "Unauthorized"}, 401
+    current_user = session['user_id']
+    nickname = session.get('nickname', current_user)
+    title = request.form.get('title', '').strip()
+    description = request.form.get('description', '').strip()
+    url = request.form.get('url', '').strip()
+    thumbnail = request.form.get('thumbnail', '').strip() or None
+    tech_stack = request.form.get('tech_stack', '').strip()
+    category = request.form.get('category', '기타').strip()
+    if not title:
+        return {"error": "제목을 입력해주세요."}, 400
+    if len(title) > 50:
+        return {"error": "제목은 50자 이내여야 합니다."}, 400
+    if len(description) > 500:
+        return {"error": "설명은 500자 이내여야 합니다."}, 400
+    try:
+        with Session(engine) as db_session:
+            project = ShowcaseProject(
+                user_id=current_user, author_nickname=nickname,
+                title=title, description=description, url=url,
+                thumbnail=thumbnail, tech_stack=tech_stack,
+                category=category, created_at=time.time()
+            )
+            db_session.add(project)
+            db_session.commit()
+            db_session.refresh(project)
+            return {"success": True, "id": project.id}
+    except Exception:
+        return {"error": "등록 중 오류가 발생했습니다."}, 500
+
+
+@app.route('/api/showcase/<int:project_id>', methods=['PUT'])
+def showcase_update(project_id):
+    if 'user_id' not in session:
+        return {"error": "Unauthorized"}, 401
+    current_user = session['user_id']
+    try:
+        with Session(engine) as db_session:
+            p = db_session.get(ShowcaseProject, project_id)
+            if not p:
+                return {"error": "존재하지 않는 프로젝트입니다."}, 404
+            if p.user_id != current_user and not check_admin():
+                return {"error": "권한이 없습니다."}, 403
+            title = request.form.get('title', '').strip()
+            if not title:
+                return {"error": "제목을 입력해주세요."}, 400
+            p.title = title
+            p.description = request.form.get('description', '').strip()
+            p.url = request.form.get('url', '').strip()
+            p.tech_stack = request.form.get('tech_stack', '').strip()
+            p.category = request.form.get('category', '기타').strip()
+            thumbnail = request.form.get('thumbnail', '').strip()
+            if thumbnail:
+                p.thumbnail = thumbnail
+            elif request.form.get('thumbnail_removed') == '1':
+                p.thumbnail = None
+            db_session.add(p)
+            db_session.commit()
+            return {"success": True}
+    except Exception:
+        return {"error": "수정 중 오류가 발생했습니다."}, 500
+
+
+@app.route('/api/showcase/<int:project_id>', methods=['DELETE'])
+def showcase_delete(project_id):
+    if 'user_id' not in session:
+        return {"error": "Unauthorized"}, 401
+    current_user = session['user_id']
+    try:
+        with Session(engine) as db_session:
+            p = db_session.get(ShowcaseProject, project_id)
+            if not p:
+                return {"error": "존재하지 않는 프로젝트입니다."}, 404
+            if p.user_id != current_user and not check_admin():
+                return {"error": "권한이 없습니다."}, 403
+            db_session.exec(text(f"DELETE FROM showcaselike WHERE project_id = {project_id}"))
+            db_session.exec(text(f"DELETE FROM showcasecomment WHERE project_id = {project_id}"))
+            db_session.delete(p)
+            db_session.commit()
+            return {"success": True}
+    except Exception:
+        return {"error": "삭제 중 오류가 발생했습니다."}, 500
+
+
+@app.route('/api/showcase/<int:project_id>/like', methods=['POST'])
+def showcase_like(project_id):
+    if 'user_id' not in session:
+        return {"error": "Unauthorized"}, 401
+    current_user = session['user_id']
+    with Session(engine) as db_session:
+        existing = db_session.exec(
+            select(ShowcaseLike).where(ShowcaseLike.project_id == project_id, ShowcaseLike.user_id == current_user)
+        ).first()
+        if existing:
+            db_session.delete(existing)
+            liked = False
+        else:
+            db_session.add(ShowcaseLike(project_id=project_id, user_id=current_user, created_at=time.time()))
+            liked = True
+        db_session.commit()
+        count = db_session.exec(
+            select(func.count(ShowcaseLike.id)).where(ShowcaseLike.project_id == project_id)
+        ).one()
+        return {"success": True, "liked": liked, "count": count}
+
+
+@app.route('/api/showcase/<int:project_id>/view', methods=['POST'])
+def showcase_view(project_id):
+    if 'user_id' not in session:
+        return {"error": "Unauthorized"}, 401
+    with Session(engine) as db_session:
+        p = db_session.get(ShowcaseProject, project_id)
+        if p:
+            p.views += 1
+            db_session.add(p)
+            db_session.commit()
+    return {"success": True}
+
+
+@app.route('/api/showcase/<int:project_id>/comments', methods=['GET'])
+def showcase_get_comments(project_id):
+    if 'user_id' not in session:
+        return {"error": "Unauthorized"}, 401
+    current_user = session['user_id']
+    with Session(engine) as db_session:
+        comments = db_session.exec(
+            select(ShowcaseComment).where(ShowcaseComment.project_id == project_id)
+            .order_by(ShowcaseComment.created_at.asc())
+        ).all()
+        return {"comments": [
+            {"id": c.id, "author_id": c.author_id, "author_nickname": c.author_nickname,
+             "content": c.content, "created_at": c.created_at,
+             "is_mine": c.author_id == current_user}
+            for c in comments
+        ]}
+
+
+@app.route('/api/showcase/<int:project_id>/comments', methods=['POST'])
+def showcase_add_comment(project_id):
+    if 'user_id' not in session:
+        return {"error": "Unauthorized"}, 401
+    current_user = session['user_id']
+    nickname = session.get('nickname', current_user)
+    content = request.form.get('content', '').strip()
+    if not content:
+        return {"error": "내용을 입력해주세요."}, 400
+    if len(content) > 300:
+        return {"error": "댓글은 300자 이내여야 합니다."}, 400
+    with Session(engine) as db_session:
+        c = ShowcaseComment(
+            project_id=project_id, author_id=current_user,
+            author_nickname=nickname, content=content, created_at=time.time()
+        )
+        db_session.add(c)
+        db_session.commit()
+        db_session.refresh(c)
+        return {"success": True, "comment": {
+            "id": c.id, "author_id": c.author_id, "author_nickname": c.author_nickname,
+            "content": c.content, "created_at": c.created_at, "is_mine": True
+        }}
+
+
+@app.route('/api/showcase/<int:project_id>/comments/<int:comment_id>', methods=['DELETE'])
+def showcase_delete_comment(project_id, comment_id):
+    if 'user_id' not in session:
+        return {"error": "Unauthorized"}, 401
+    current_user = session['user_id']
+    with Session(engine) as db_session:
+        c = db_session.get(ShowcaseComment, comment_id)
+        if not c or c.project_id != project_id:
+            return {"error": "존재하지 않는 댓글입니다."}, 404
+        if c.author_id != current_user and not check_admin():
+            return {"error": "권한이 없습니다."}, 403
+        db_session.delete(c)
+        db_session.commit()
+        return {"success": True}
 
 
 if __name__ == '__main__':
