@@ -5,13 +5,23 @@
 (function () {
     'use strict';
 
-    const ic = name => `<i data-lucide="${name}" class="li"></i>`;
+    // 아이콘 SVG 캐싱
+    const _icCache = {};
+    function ic(name) {
+        if (_icCache[name]) return _icCache[name];
+        const tmp = document.createElement('span');
+        tmp.innerHTML = `<i data-lucide="${name}" class="li"></i>`;
+        if (window.lucide) lucide.createIcons({ el: tmp });
+        return (_icCache[name] = tmp.innerHTML);
+    }
 
     // ── 헬퍼 ──
     function escHtml(str) {
-        const d = document.createElement('div');
-        d.textContent = str;
-        return d.innerHTML;
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
     }
     function timeAgo(ts) {
         const diff = Math.floor(Date.now() / 1000 - ts);
@@ -109,9 +119,8 @@
                 });
             }
             body.appendChild(row);
-            if (window.lucide) lucide.createIcons({ el: row });
         });
-        if (window.lucide) lucide.createIcons({ el: body });
+        // ic()가 SVG 캐싱 방식이므로 createIcons 불필요
     }
 
     // ── 뱃지 업데이트 ──

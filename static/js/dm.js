@@ -7,9 +7,20 @@
 
     // ── 내부 헬퍼 ──
     function escHtml(str) {
-        const d = document.createElement('div');
-        d.textContent = str;
-        return d.innerHTML;
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+    // 아이콘 SVG 캐싱
+    const _icDmCache = {};
+    function icDm(name) {
+        if (_icDmCache[name]) return _icDmCache[name];
+        const tmp = document.createElement('span');
+        tmp.innerHTML = `<i data-lucide="${name}" class="li"></i>`;
+        if (window.lucide) lucide.createIcons({ el: tmp });
+        return (_icDmCache[name] = tmp.innerHTML);
     }
     function timeAgo(ts) {
         const diff = Math.floor((Date.now() / 1000) - ts);
@@ -52,7 +63,7 @@
         const back  = el('dmBackBtn');
         const input = el('dmInputArea');
         const body  = el('dmPanelBody');
-        if (title) { title.innerHTML = `<i data-lucide="message-circle" class="li"></i> ${nickname}`; lucide.createIcons({ el: title }); }
+        if (title) { title.innerHTML = `${icDm('message-circle')} ${escHtml(nickname)}`; }
         if (back)  back.classList.remove('hidden');
         if (input) input.classList.remove('hidden');
         if (body)  body.innerHTML = '<div class="dm-loading">불러오는 중...</div>';
@@ -66,7 +77,7 @@
         const title = el('dmPanelTitle');
         const back  = el('dmBackBtn');
         const input = el('dmInputArea');
-        if (title) { title.innerHTML = '<i data-lucide="message-circle" class="li"></i> 메시지'; lucide.createIcons({ el: title }); }
+        if (title) { title.innerHTML = `${icDm('message-circle')} 메시지`; }
         if (back)  back.classList.add('hidden');
         if (input) input.classList.add('hidden');
         loadConversations();

@@ -1,12 +1,22 @@
-const ic = name => `<i data-lucide="${name}" class="li"></i>`;
+// 아이콘 SVG 캐싱
+const _icCache = {};
+function ic(name) {
+    if (_icCache[name]) return _icCache[name];
+    const tmp = document.createElement('span');
+    tmp.innerHTML = `<i data-lucide="${name}" class="li"></i>`;
+    if (window.lucide) lucide.createIcons({ el: tmp });
+    return (_icCache[name] = tmp.innerHTML);
+}
 
 'use strict';
 
-// ── 탭 전환 ──
-document.querySelectorAll('.sidebar-item').forEach(btn => {
+// ── 탭 전환 (DOM 캐싱) ──
+const _sidebarItems = document.querySelectorAll('.sidebar-item');
+const _adminTabs    = document.querySelectorAll('.admin-tab');
+_sidebarItems.forEach(btn => {
     btn.addEventListener('click', () => {
-        document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+        _sidebarItems.forEach(b => b.classList.remove('active'));
+        _adminTabs.forEach(t => t.classList.remove('active'));
         btn.classList.add('active');
         const tab = btn.dataset.tab;
         document.getElementById(`tab-${tab}`).classList.add('active');
@@ -18,9 +28,11 @@ document.querySelectorAll('.sidebar-item').forEach(btn => {
 
 // ── 유틸 ──
 function escHtml(str) {
-    const d = document.createElement('div');
-    d.textContent = str;
-    return d.innerHTML;
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
 }
 function escAttr(str) {
     return String(str)
@@ -249,12 +261,16 @@ function renderUsers(users) {
 }
 
 // 검색
+let _userSearchTimer = null;
 document.getElementById('userSearchInput').addEventListener('input', e => {
-    const q = e.target.value.trim().toLowerCase();
-    if (!q) { renderUsers(allUsers); return; }
-    renderUsers(allUsers.filter(u =>
-        u.nickname.toLowerCase().includes(q) || u.username.toLowerCase().includes(q)
-    ));
+    clearTimeout(_userSearchTimer);
+    _userSearchTimer = setTimeout(() => {
+        const q = e.target.value.trim().toLowerCase();
+        if (!q) { renderUsers(allUsers); return; }
+        renderUsers(allUsers.filter(u =>
+            u.nickname.toLowerCase().includes(q) || u.username.toLowerCase().includes(q)
+        ));
+    }, 150);
 });
 
 // 잠금 모달
@@ -424,14 +440,18 @@ function renderMessages(list) {
 // 메시지 검색
 const msgSearchInput = document.getElementById('msgSearchInput');
 if (msgSearchInput) {
+    let _msgSearchTimer = null;
     msgSearchInput.addEventListener('input', () => {
-        const q = msgSearchInput.value.trim().toLowerCase();
-        if (!q) { renderMessages(allMessages); return; }
-        renderMessages(allMessages.filter(m =>
-            m.sender_nick.toLowerCase().includes(q) ||
-            m.receiver_nick.toLowerCase().includes(q) ||
-            m.message.toLowerCase().includes(q)
-        ));
+        clearTimeout(_msgSearchTimer);
+        _msgSearchTimer = setTimeout(() => {
+            const q = msgSearchInput.value.trim().toLowerCase();
+            if (!q) { renderMessages(allMessages); return; }
+            renderMessages(allMessages.filter(m =>
+                m.sender_nick.toLowerCase().includes(q) ||
+                m.receiver_nick.toLowerCase().includes(q) ||
+                m.message.toLowerCase().includes(q)
+            ));
+        }, 150);
     });
 }
 
