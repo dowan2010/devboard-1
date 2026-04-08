@@ -663,7 +663,7 @@ body.dark:has(.showcase-page) {
     display: flex;
     align-items: center;
     gap: 5px;
-    text-decoration: none;
+    text-decoration: none !important;
     color: #444;
     font-size: 14px;
     font-weight: 700;
