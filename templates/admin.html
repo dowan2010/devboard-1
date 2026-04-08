@@ -65,6 +65,16 @@
                     <span>메시지 관리</span>
                     <span class="sidebar-count" id="msgCount">-</span>
                 </button>
+                <button class="sidebar-item" data-tab="showcase">
+                    <span class="sidebar-icon"><i data-lucide="rocket" class="li"></i></span>
+                    <span>쇼케이스 관리</span>
+                    <span class="sidebar-count" id="showcaseCount">-</span>
+                </button>
+                <button class="sidebar-item" data-tab="teams">
+                    <span class="sidebar-icon"><i data-lucide="users-2" class="li"></i></span>
+                    <span>팀 관리</span>
+                    <span class="sidebar-count" id="teamsCount">-</span>
+                </button>
             </div>
         </aside>
 
@@ -156,6 +166,61 @@
                     </table>
                 </div>
             </section>
+
+            <!-- ── 쇼케이스 관리 탭 ── -->
+            <section class="admin-tab" id="tab-showcase">
+                <div class="tab-header">
+                    <div>
+                        <h2 class="tab-title"><i data-lucide="rocket" class="li"></i> 쇼케이스 관리</h2>
+                        <p class="tab-sub">등록된 쇼케이스 프로젝트를 확인하고 삭제할 수 있습니다</p>
+                    </div>
+                </div>
+                <div class="user-table-wrap">
+                    <table class="user-table" id="showcaseTable">
+                        <thead>
+                            <tr>
+                                <th>제목</th>
+                                <th>작성자</th>
+                                <th>카테고리</th>
+                                <th>좋아요</th>
+                                <th>댓글</th>
+                                <th>조회수</th>
+                                <th>삭제</th>
+                            </tr>
+                        </thead>
+                        <tbody id="showcaseTableBody">
+                            <tr><td colspan="7" class="admin-loading">불러오는 중...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ── 팀 관리 탭 ── -->
+            <section class="admin-tab" id="tab-teams">
+                <div class="tab-header">
+                    <div>
+                        <h2 class="tab-title"><i data-lucide="users-2" class="li"></i> 팀 관리</h2>
+                        <p class="tab-sub">등록된 팀을 확인하고 삭제할 수 있습니다</p>
+                    </div>
+                </div>
+                <div class="user-table-wrap">
+                    <table class="user-table" id="teamsTable">
+                        <thead>
+                            <tr>
+                                <th>팀 이름</th>
+                                <th>팀장</th>
+                                <th>분야</th>
+                                <th>인원</th>
+                                <th>삭제</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teamsTableBody">
+                            <tr><td colspan="5" class="admin-loading">불러오는 중...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
         </main>
     </div>
 

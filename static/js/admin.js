@@ -23,6 +23,8 @@ _sidebarItems.forEach(btn => {
         if (tab === 'users') loadUsers();
         if (tab === 'members') loadMembers();
         if (tab === 'messages') loadMessages();
+        if (tab === 'showcase') loadShowcase();
+        if (tab === 'teams') loadTeams();
     });
 });
 
@@ -452,6 +454,106 @@ if (msgSearchInput) {
                 m.message.toLowerCase().includes(q)
             ));
         }, 150);
+    });
+}
+
+// ── 쇼케이스 관리 ──
+let allShowcase = [];
+async function loadShowcase() {
+    const tbody = document.getElementById('showcaseTableBody');
+    tbody.innerHTML = `<tr><td colspan="7" class="admin-loading">불러오는 중...</td></tr>`;
+    try {
+        const res = await fetch('/api/showcase');
+        const data = await res.json();
+        allShowcase = data.projects || [];
+        document.getElementById('showcaseCount').textContent = allShowcase.length;
+        renderShowcase(allShowcase);
+    } catch {
+        tbody.innerHTML = `<tr><td colspan="7" class="admin-loading">불러오기 실패</td></tr>`;
+    }
+}
+
+function renderShowcase(projects) {
+    const tbody = document.getElementById('showcaseTableBody');
+    if (!projects.length) {
+        tbody.innerHTML = `<tr><td colspan="7" class="admin-loading">등록된 프로젝트가 없습니다</td></tr>`;
+        return;
+    }
+    tbody.innerHTML = projects.map(p => `
+        <tr>
+            <td><strong>${escHtml(p.title)}</strong></td>
+            <td>${escHtml(p.author_nickname)}</td>
+            <td>${escHtml(p.category)}</td>
+            <td>❤️ ${p.like_count}</td>
+            <td>💬 ${p.comment_count}</td>
+            <td>👁 ${p.views}</td>
+            <td>
+                <button class="sc-admin-del-btn" data-id="${p.id}" style="background:rgba(231,76,60,0.1);color:#e74c3c;border:1px solid rgba(231,76,60,0.3);border-radius:7px;padding:5px 12px;cursor:pointer;font-size:12px;font-weight:600;">
+                    삭제
+                </button>
+            </td>
+        </tr>
+    `).join('');
+    tbody.querySelectorAll('.sc-admin-del-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            if (!confirm('이 프로젝트를 삭제할까요?')) return;
+            const res = await fetch(`/api/showcase/${btn.dataset.id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (data.success) {
+                allShowcase = allShowcase.filter(p => p.id != btn.dataset.id);
+                document.getElementById('showcaseCount').textContent = allShowcase.length;
+                renderShowcase(allShowcase);
+            } else alert(data.error || '삭제 실패');
+        });
+    });
+}
+
+// ── 팀 관리 ──
+let allTeams = [];
+async function loadTeams() {
+    const tbody = document.getElementById('teamsTableBody');
+    tbody.innerHTML = `<tr><td colspan="5" class="admin-loading">불러오는 중...</td></tr>`;
+    try {
+        const res = await fetch('/api/teams');
+        const data = await res.json();
+        allTeams = data.teams || [];
+        document.getElementById('teamsCount').textContent = allTeams.length;
+        renderTeams(allTeams);
+    } catch {
+        tbody.innerHTML = `<tr><td colspan="5" class="admin-loading">불러오기 실패</td></tr>`;
+    }
+}
+
+function renderTeams(teams) {
+    const tbody = document.getElementById('teamsTableBody');
+    if (!teams.length) {
+        tbody.innerHTML = `<tr><td colspan="5" class="admin-loading">등록된 팀이 없습니다</td></tr>`;
+        return;
+    }
+    tbody.innerHTML = teams.map(t => `
+        <tr>
+            <td><strong>${escHtml(t.name)}</strong></td>
+            <td>${escHtml(t.leader_name)}</td>
+            <td>${escHtml(t.dev_field || '-')}</td>
+            <td>${t.member_count || 1} / ${t.max_members}명</td>
+            <td>
+                <button class="team-admin-del-btn" data-id="${t.id}" style="background:rgba(231,76,60,0.1);color:#e74c3c;border:1px solid rgba(231,76,60,0.3);border-radius:7px;padding:5px 12px;cursor:pointer;font-size:12px;font-weight:600;">
+                    삭제
+                </button>
+            </td>
+        </tr>
+    `).join('');
+    tbody.querySelectorAll('.team-admin-del-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            if (!confirm('이 팀을 삭제할까요?')) return;
+            const res = await fetch(`/api/teams/${btn.dataset.id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (data.success) {
+                allTeams = allTeams.filter(t => t.id != btn.dataset.id);
+                document.getElementById('teamsCount').textContent = allTeams.length;
+                renderTeams(allTeams);
+            } else alert(data.error || '삭제 실패');
+        });
     });
 }
 

@@ -1225,7 +1225,7 @@ def delete_team(team_id):
         team = db_session.get(Team, team_id)
         if not team:
             return {"error": "팀을 찾을 수 없습니다."}, 404
-        if team.leader_id != session['user_id']:
+        if team.leader_id != session['user_id'] and not check_admin():
             return {"error": "권한이 없습니다."}, 403
         for m in db_session.exec(select(TeamMember).where(TeamMember.team_id == team_id)).all():
             db_session.delete(m)
