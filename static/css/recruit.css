@@ -64,6 +64,8 @@
 .card-delete-btn .li svg { width: 14px; height: 14px; }
 .notif-icon .li svg { width: 20px; height: 20px; }
 
+a { text-decoration: none; }
+
 * {
     margin: 0;
     padding: 0;
