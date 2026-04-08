@@ -644,13 +644,37 @@
 .sc-comment-submit:hover { opacity: 0.85; }
 .sc-comment-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* ── 상단바 공통 (showcase 전용) ── */
+.user-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #444;
+}
+.profile-link-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    text-decoration: none;
+    color: #444;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 10px;
+    transition: background 0.15s, color 0.15s;
+}
+.profile-link-btn:hover { background: rgba(0,0,0,0.06); color: #222; }
+.profile-link-btn .li svg { width: 15px; height: 15px; }
+
 /* ── 다크모드 ── */
 body.dark .showcase-page { color: #e0e0e0; }
+body.dark .user-name { color: #ccc; }
+body.dark .profile-link-btn { color: #ccc; }
+body.dark .profile-link-btn:hover { background: rgba(255,255,255,0.07); color: #fff; }
 body.dark .showcase-title { color: #e0e0e0; }
 body.dark .showcase-sub { color: #777; }
 
 /* 필터 탭 */
-body.dark .sc-tab { color: #777; }
+body.dark .sc-tab { color: #aaa; }
 body.dark .sc-tab:hover:not(.active) { background: rgba(91,94,247,0.12); color: #9b9ef7; }
 
 /* 카드 */
