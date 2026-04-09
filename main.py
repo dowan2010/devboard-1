@@ -185,6 +185,9 @@ else:
         DATABASE_URL,
         pool_pre_ping=True,
         pool_recycle=300,
+        pool_size=5,
+        max_overflow=10,
+        pool_timeout=30,
     )
 
 try:
@@ -209,6 +212,24 @@ _run_migration('ALTER TABLE "user" ADD COLUMN nickname VARCHAR' if _is_pg else
 
 for idx_name in ('ix_profile_user_id', 'uq_profile_user_id', 'profile_user_id'):
     _run_migration(f"DROP INDEX IF EXISTS {idx_name}")
+
+# 자주 조회하는 컬럼에 인덱스 추가 (이미 있으면 무시)
+for idx_sql in (
+    "CREATE INDEX IF NOT EXISTS idx_dm_receiver   ON directmessage(receiver_id)",
+    "CREATE INDEX IF NOT EXISTS idx_dm_sender     ON directmessage(sender_id)",
+    "CREATE INDEX IF NOT EXISTS idx_dm_unread     ON directmessage(receiver_id, is_read)",
+    "CREATE INDEX IF NOT EXISTS idx_notif_user    ON notification(user_id)",
+    "CREATE INDEX IF NOT EXISTS idx_notif_unread  ON notification(user_id, is_read)",
+    "CREATE INDEX IF NOT EXISTS idx_profile_type  ON profile(post_type)",
+    "CREATE INDEX IF NOT EXISTS idx_profile_uid   ON profile(user_id)",
+    "CREATE INDEX IF NOT EXISTS idx_team_leader   ON team(leader_id)",
+    "CREATE INDEX IF NOT EXISTS idx_tm_team       ON teammember(team_id)",
+    "CREATE INDEX IF NOT EXISTS idx_tm_user       ON teammember(user_id)",
+    "CREATE INDEX IF NOT EXISTS idx_sclike_proj   ON showcaselike(project_id)",
+    "CREATE INDEX IF NOT EXISTS idx_sccmt_proj    ON showcasecomment(project_id)",
+    "CREATE INDEX IF NOT EXISTS idx_sclike_uid    ON showcaselike(project_id, user_id)",
+):
+    _run_migration(idx_sql)
 
 _user = '"user"' if _is_pg else 'user'
 for col_sql in (
@@ -1039,20 +1060,32 @@ def api_search(request: Request):
 # ─────────────── 활동 통계 ───────────────
 @app.get('/api/stats')
 def api_stats(request: Request):
+    now = time.time()
+    if 'stats' in _cache and now - _cache_ts.get('stats', 0) < 30:
+        return _cache['stats']
     with Session(engine) as db_session:
         user_count    = db_session.exec(select(func.count(User.id))).one()
         profile_count = db_session.exec(
             select(func.count(Profile.id)).where(Profile.post_type == 'recruit')
         ).one()
-    return {"users": user_count, "profiles": profile_count}
+    result = {"users": user_count, "profiles": profile_count}
+    _cache['stats'] = result
+    _cache_ts['stats'] = now
+    return result
 
 
 @app.get('/api/new-activity')
 def new_activity(request: Request):
+    now = time.time()
+    if 'new_activity' in _cache and now - _cache_ts.get('new_activity', 0) < 30:
+        return _cache['new_activity']
     with Session(engine) as db_session:
         profile_latest = db_session.exec(select(func.max(Profile.created_at))).one() or 0
         notice_latest  = db_session.exec(select(func.max(Notice.created_at))).one() or 0
-    return {"profile_latest": profile_latest, "notice_latest": notice_latest}
+    result = {"profile_latest": profile_latest, "notice_latest": notice_latest}
+    _cache['new_activity'] = result
+    _cache_ts['new_activity'] = now
+    return result
 
 
 # ─────────────── 구인 게시판 ───────────────
@@ -1559,8 +1592,12 @@ def get_notifications(request: Request):
             select(Notification)
             .where(Notification.user_id == current_user)
             .order_by(Notification.created_at.desc())
+            .limit(20)
         ).all()
-        unread = sum(1 for n in notifs if not n.is_read)
+        unread = db_session.exec(
+            select(func.count(Notification.id))
+            .where(Notification.user_id == current_user, Notification.is_read == False)
+        ).one()
     return {
         "notifications": [
             {
@@ -1571,7 +1608,7 @@ def get_notifications(request: Request):
                 "notif_type": n.notif_type,
                 "is_read": n.is_read,
                 "created_at": n.created_at
-            } for n in notifs[:20]
+            } for n in notifs
         ],
         "unread": unread
     }
@@ -1638,7 +1675,7 @@ def dm_conversations(request: Request):
             select(DirectMessage).where(
                 or_(DirectMessage.sender_id == current_user,
                     DirectMessage.receiver_id == current_user)
-            ).order_by(DirectMessage.created_at.desc())
+            ).order_by(DirectMessage.created_at.desc()).limit(500)
         ).all()
         partner_ids = {
             (m.receiver_id if m.sender_id == current_user else m.sender_id)
@@ -1682,7 +1719,7 @@ def get_dm(other_user_id: str, request: Request):
                     and_(DirectMessage.sender_id == other_user_id,
                          DirectMessage.receiver_id == current_user)
                 )
-            ).order_by(DirectMessage.created_at.asc())
+            ).order_by(DirectMessage.created_at.asc()).limit(200)
         ).all()
         for msg in messages:
             if msg.receiver_id == current_user and not msg.is_read:
@@ -1737,15 +1774,10 @@ def read_all_notifications(request: Request):
         return JSONResponse({"error": "Unauthorized"}, status_code=401)
     current_user = request.session['user_id']
     with Session(engine) as db_session:
-        notifs = db_session.exec(
-            select(Notification).where(
-                Notification.user_id == current_user,
-                Notification.is_read == False
-            )
-        ).all()
-        for n in notifs:
-            n.is_read = True
-            db_session.add(n)
+        db_session.execute(
+            text("UPDATE notification SET is_read = true WHERE user_id = :uid AND is_read = false"),
+            {"uid": current_user}
+        )
         db_session.commit()
     return {"success": True}
 
@@ -1821,7 +1853,7 @@ def get_group_messages(team_id: int, request: Request):
             return JSONResponse({"error": "팀 멤버만 볼 수 있습니다."}, status_code=403)
         messages = db_session.exec(
             select(GroupMessage).where(GroupMessage.team_id == team_id)
-            .order_by(GroupMessage.created_at)
+            .order_by(GroupMessage.created_at).limit(200)
         ).all()
         members = db_session.exec(
             select(TeamMember).where(
@@ -1830,7 +1862,7 @@ def get_group_messages(team_id: int, request: Request):
             )
         ).all()
         members_data = [{"user_id": m.user_id, "display_name": m.display_name} for m in members]
-        leader_user = db_session.exec(select(User).where(User.username == team.leader_id)).first()
+        leader_user = _get_user_cached(team.leader_id)
         leader_name = leader_user.nickname if leader_user and leader_user.nickname else team.leader_name
         members_data.insert(0, {"user_id": team.leader_id, "display_name": leader_name + " 👑"})
     return {
@@ -1872,7 +1904,7 @@ async def send_group_message(team_id: int, request: Request):
         is_leader = team.leader_id == current_user
         if not member and not is_leader:
             return JSONResponse({"error": "팀 멤버만 메시지를 보낼 수 있습니다."}, status_code=403)
-        user = db_session.exec(select(User).where(User.username == current_user)).first()
+        user = _get_user_cached(current_user)
         nickname = user.nickname if user and user.nickname else current_user
         msg = GroupMessage(
             team_id=team_id,
@@ -1917,28 +1949,39 @@ def showcase_list(request: Request):
             if category and category != '전체':
                 q = q.where(ShowcaseProject.category == category)
             projects = db_session.exec(q).all()
-            result = []
-            for p in projects:
-                like_count = db_session.exec(
-                    select(func.count(ShowcaseLike.id)).where(ShowcaseLike.project_id == p.id)
-                ).one()
-                comment_count = db_session.exec(
-                    select(func.count(ShowcaseComment.id)).where(ShowcaseComment.project_id == p.id)
-                ).one()
-                liked = db_session.exec(
-                    select(ShowcaseLike).where(ShowcaseLike.project_id == p.id, ShowcaseLike.user_id == current_user)
-                ).first() is not None
-                result.append({
-                    "id": p.id, "user_id": p.user_id,
-                    "author_nickname": p.author_nickname,
-                    "title": p.title, "description": p.description,
-                    "url": p.url, "thumbnail": p.thumbnail,
-                    "tech_stack": [t.strip() for t in p.tech_stack.split(',') if t.strip()],
-                    "category": p.category, "views": p.views,
-                    "like_count": like_count, "comment_count": comment_count,
-                    "liked": liked, "is_mine": p.user_id == current_user,
-                    "created_at": p.created_at,
-                })
+            if not projects:
+                return {"projects": []}
+            pids = [p.id for p in projects]
+            # 배치 쿼리: 프로젝트별 좋아요 수
+            like_counts = dict(db_session.exec(
+                select(ShowcaseLike.project_id, func.count(ShowcaseLike.id))
+                .where(ShowcaseLike.project_id.in_(pids))
+                .group_by(ShowcaseLike.project_id)
+            ).all())
+            # 배치 쿼리: 프로젝트별 댓글 수
+            comment_counts = dict(db_session.exec(
+                select(ShowcaseComment.project_id, func.count(ShowcaseComment.id))
+                .where(ShowcaseComment.project_id.in_(pids))
+                .group_by(ShowcaseComment.project_id)
+            ).all())
+            # 배치 쿼리: 내가 좋아요한 프로젝트 목록
+            liked_set = {row for row in db_session.exec(
+                select(ShowcaseLike.project_id)
+                .where(ShowcaseLike.project_id.in_(pids), ShowcaseLike.user_id == current_user)
+            ).all()}
+            result = [{
+                "id": p.id, "user_id": p.user_id,
+                "author_nickname": p.author_nickname,
+                "title": p.title, "description": p.description,
+                "url": p.url, "thumbnail": p.thumbnail,
+                "tech_stack": [t.strip() for t in p.tech_stack.split(',') if t.strip()],
+                "category": p.category, "views": p.views,
+                "like_count": like_counts.get(p.id, 0),
+                "comment_count": comment_counts.get(p.id, 0),
+                "liked": p.id in liked_set,
+                "is_mine": p.user_id == current_user,
+                "created_at": p.created_at,
+            } for p in projects]
         return {"projects": result}
     except Exception:
         return JSONResponse({"error": "불러오는 중 오류가 발생했습니다.", "projects": []}, status_code=500)
