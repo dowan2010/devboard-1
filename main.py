@@ -275,6 +275,16 @@ def check_owner(sess: dict) -> bool:
         return bool(u and u.is_owner)
 
 
+# ─────────────── 전역 예외 핸들러 (에러 원인 로깅용) ───────────────
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    import traceback
+    tb = traceback.format_exc()
+    print(f"[ERROR] {request.method} {request.url.path} → {type(exc).__name__}: {exc}")
+    print(tb)
+    return JSONResponse({"detail": f"{type(exc).__name__}: {exc}"}, status_code=500)
+
+
 # ─────────────── 미들웨어 ───────────────
 @app.middleware("http")
 async def enforce_lock(request: Request, call_next):
@@ -380,9 +390,13 @@ async def set_nickname_submit(request: Request):
 def home(request: Request):
     show_toast = request.session.pop('show_login_toast', False)
     nickname = request.session.get('nickname', request.session.get('user_id', '게스트'))
-    with Session(engine) as db_session:
-        owner = db_session.exec(select(User).where(User.is_owner == True)).first()
-        admin_discord = owner.discord_id if owner and owner.discord_id else None
+    admin_discord = None
+    try:
+        with Session(engine) as db_session:
+            owner = db_session.exec(select(User).where(User.is_owner == True)).first()
+            admin_discord = owner.discord_id if owner and owner.discord_id else None
+    except Exception as e:
+        print(f"[WARN] home DB query failed: {e}")
     return templates.TemplateResponse('main.html', {
         'request': request,
         'user_id': nickname,
