@@ -1,9 +1,12 @@
-flask
-werkzeug
+fastapi
+uvicorn[standard]
+python-multipart
 sqlmodel
 sqlalchemy
 authlib
+httpx
 requests
 python-dotenv
 psycopg2-binary
-flask-caching
+itsdangerous
+Jinja2

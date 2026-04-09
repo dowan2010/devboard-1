@@ -1,9 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for, session
-from flask_caching import Cache
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
+from starlette.middleware.sessions import SessionMiddleware
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 from sqlalchemy import text, or_, and_, func
-from authlib.integrations.flask_client import OAuth
-from werkzeug.middleware.proxy_fix import ProxyFix
+from authlib.integrations.starlette_client import OAuth
 from typing import Optional
 from dotenv import load_dotenv
 
@@ -13,14 +15,14 @@ import json
 
 load_dotenv()
 
-app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY')
-app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+# ─────────────── 앱 설정 ───────────────
+app = FastAPI()
 
-# ── 인메모리 캐시 (User 테이블 등 자주 쓰이는 쿼리 결과 60초 보관) ──
-cache = Cache(app, config={'CACHE_TYPE': 'SimpleCache', 'CACHE_DEFAULT_TIMEOUT': 60})
+templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
-oauth = OAuth(app)
+# ─────────────── Google OAuth ───────────────
+oauth = OAuth()
 google = oauth.register(
     name='google',
     client_id=os.environ.get('GOOGLE_CLIENT_ID'),
@@ -30,6 +32,7 @@ google = oauth.register(
 )
 
 
+# ─────────────── 모델 ───────────────
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     username: str                                  # 구글 email
@@ -168,6 +171,7 @@ class ShowcaseComment(SQLModel, table=True):
     created_at: float = Field(default=0.0)
 
 
+# ─────────────── DB 초기화 ───────────────
 DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///database.db")
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
@@ -176,64 +180,72 @@ if "sqlite" in DATABASE_URL:
 else:
     engine = create_engine(
         DATABASE_URL,
-        pool_pre_ping=True,    # 절전 후 재연결 시 끊긴 커넥션 자동 교체
-        pool_recycle=300,      # 5분마다 커넥션 갱신
+        pool_pre_ping=True,
+        pool_recycle=300,
     )
 
-with app.app_context():
-    SQLModel.metadata.create_all(engine)
-    # 기존 DB에 nickname 컬럼 없을 경우 추가
-    with engine.connect() as conn:
+SQLModel.metadata.create_all(engine)
+
+with engine.connect() as conn:
+    try:
+        conn.execute(text("ALTER TABLE user ADD COLUMN nickname VARCHAR"))
+        conn.commit()
+    except Exception:
+        pass
+    for idx_name in ('ix_profile_user_id', 'uq_profile_user_id', 'profile_user_id'):
         try:
-            conn.execute(text("ALTER TABLE user ADD COLUMN nickname VARCHAR"))
+            conn.execute(text(f"DROP INDEX IF EXISTS {idx_name}"))
             conn.commit()
         except Exception:
             pass
-        # Profile.user_id unique 제약 제거 (다중 프로필 허용)
-        for idx_name in ('ix_profile_user_id', 'uq_profile_user_id', 'profile_user_id'):
-            try:
-                conn.execute(text(f"DROP INDEX IF EXISTS {idx_name}"))
-                conn.commit()
-            except Exception:
-                pass
-        # 구직 컬럼 추가
-        for col_sql in (
-            "ALTER TABLE profile ADD COLUMN post_type VARCHAR DEFAULT 'recruit'",
-            "ALTER TABLE profile ADD COLUMN dev_field VARCHAR",
-            "ALTER TABLE profile ADD COLUMN bio VARCHAR DEFAULT ''",
-            "ALTER TABLE notification ADD COLUMN notif_type VARCHAR DEFAULT 'interest'",
-            "ALTER TABLE user ADD COLUMN is_admin BOOLEAN DEFAULT 0",
-            "ALTER TABLE user ADD COLUMN is_superadmin BOOLEAN DEFAULT 0",
-            "ALTER TABLE user ADD COLUMN is_owner BOOLEAN DEFAULT 0",
-            "ALTER TABLE user ADD COLUMN google_id VARCHAR",
-            "CREATE TABLE IF NOT EXISTS noticecomment (id INTEGER PRIMARY KEY AUTOINCREMENT, notice_id INTEGER NOT NULL, author_id VARCHAR NOT NULL, author_nickname VARCHAR DEFAULT '', content VARCHAR DEFAULT '', created_at REAL DEFAULT 0.0)",
-            "ALTER TABLE team ADD COLUMN team_image TEXT DEFAULT NULL",
-            "ALTER TABLE user ADD COLUMN discord_id VARCHAR DEFAULT NULL",
-            "ALTER TABLE user ADD COLUMN github_id VARCHAR DEFAULT NULL",
-            "CREATE TABLE IF NOT EXISTS showcaseproject (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id VARCHAR NOT NULL, author_nickname VARCHAR DEFAULT '', title VARCHAR NOT NULL, description VARCHAR DEFAULT '', url VARCHAR DEFAULT '', thumbnail TEXT, tech_stack VARCHAR DEFAULT '', category VARCHAR DEFAULT '기타', views INTEGER DEFAULT 0, created_at REAL DEFAULT 0.0)",
-            "CREATE TABLE IF NOT EXISTS showcaselike (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL, user_id VARCHAR NOT NULL, created_at REAL DEFAULT 0.0)",
-            "CREATE TABLE IF NOT EXISTS showcasecomment (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL, author_id VARCHAR NOT NULL, author_nickname VARCHAR DEFAULT '', content VARCHAR DEFAULT '', created_at REAL DEFAULT 0.0)",
-        ):
-            try:
-                conn.execute(text(col_sql))
-                conn.commit()
-            except Exception:
-                pass
+    for col_sql in (
+        "ALTER TABLE profile ADD COLUMN post_type VARCHAR DEFAULT 'recruit'",
+        "ALTER TABLE profile ADD COLUMN dev_field VARCHAR",
+        "ALTER TABLE profile ADD COLUMN bio VARCHAR DEFAULT ''",
+        "ALTER TABLE notification ADD COLUMN notif_type VARCHAR DEFAULT 'interest'",
+        "ALTER TABLE user ADD COLUMN is_admin BOOLEAN DEFAULT 0",
+        "ALTER TABLE user ADD COLUMN is_superadmin BOOLEAN DEFAULT 0",
+        "ALTER TABLE user ADD COLUMN is_owner BOOLEAN DEFAULT 0",
+        "ALTER TABLE user ADD COLUMN google_id VARCHAR",
+        "CREATE TABLE IF NOT EXISTS noticecomment (id INTEGER PRIMARY KEY AUTOINCREMENT, notice_id INTEGER NOT NULL, author_id VARCHAR NOT NULL, author_nickname VARCHAR DEFAULT '', content VARCHAR DEFAULT '', created_at REAL DEFAULT 0.0)",
+        "ALTER TABLE team ADD COLUMN team_image TEXT DEFAULT NULL",
+        "ALTER TABLE user ADD COLUMN discord_id VARCHAR DEFAULT NULL",
+        "ALTER TABLE user ADD COLUMN github_id VARCHAR DEFAULT NULL",
+        "CREATE TABLE IF NOT EXISTS showcaseproject (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id VARCHAR NOT NULL, author_nickname VARCHAR DEFAULT '', title VARCHAR NOT NULL, description VARCHAR DEFAULT '', url VARCHAR DEFAULT '', thumbnail TEXT, tech_stack VARCHAR DEFAULT '', category VARCHAR DEFAULT '기타', views INTEGER DEFAULT 0, created_at REAL DEFAULT 0.0)",
+        "CREATE TABLE IF NOT EXISTS showcaselike (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL, user_id VARCHAR NOT NULL, created_at REAL DEFAULT 0.0)",
+        "CREATE TABLE IF NOT EXISTS showcasecomment (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL, author_id VARCHAR NOT NULL, author_nickname VARCHAR DEFAULT '', content VARCHAR DEFAULT '', created_at REAL DEFAULT 0.0)",
+    ):
+        try:
+            conn.execute(text(col_sql))
+            conn.commit()
+        except Exception:
+            pass
 
 
-@cache.cached(timeout=60, key_prefix='all_users')
+# ─────────────── 캐시 ───────────────
+_cache: dict = {}
+_cache_ts: dict = {}
+
+
 def get_all_users():
-    """User 테이블 전체 조회 (60초 캐시) — nick_map 등에 활용"""
+    now = time.time()
+    if 'all_users' in _cache and now - _cache_ts.get('all_users', 0) < 60:
+        return _cache['all_users']
     with Session(engine) as db_session:
-        return db_session.exec(select(User)).all()
+        users = db_session.exec(select(User)).all()
+    _cache['all_users'] = users
+    _cache_ts['all_users'] = now
+    return users
+
 
 def invalidate_user_cache():
-    cache.delete('all_users')
+    _cache.pop('all_users', None)
+    _cache_ts.pop('all_users', None)
 
 
-def check_admin():
-    """현재 로그인 유저가 관리자(일반 or 총괄)인지 확인"""
-    uid = session.get('user_id')
+# ─────────────── 권한 헬퍼 ───────────────
+def check_admin(sess: dict) -> bool:
+    uid = sess.get('user_id')
     if not uid:
         return False
     with Session(engine) as db_session:
@@ -241,9 +253,8 @@ def check_admin():
         return bool(u and u.is_admin)
 
 
-def check_superadmin():
-    """현재 로그인 유저가 총괄 관리자인지 확인"""
-    uid = session.get('user_id')
+def check_superadmin(sess: dict) -> bool:
+    uid = sess.get('user_id')
     if not uid:
         return False
     with Session(engine) as db_session:
@@ -251,9 +262,8 @@ def check_superadmin():
         return bool(u and u.is_superadmin)
 
 
-def check_owner():
-    """현재 로그인 유저가 최초 소유자인지 확인"""
-    uid = session.get('user_id')
+def check_owner(sess: dict) -> bool:
+    uid = sess.get('user_id')
     if not uid:
         return False
     with Session(engine) as db_session:
@@ -261,51 +271,52 @@ def check_owner():
         return bool(u and u.is_owner)
 
 
-@app.before_request
-def enforce_lock():
-    """이미 로그인된 유저가 잠금 상태이면 즉시 세션 만료"""
-    if request.path.startswith('/static'):
-        return
-    uid = session.get('user_id')
-    if not uid:
-        return
-    with Session(engine) as db_session:
-        user = db_session.exec(select(User).where(User.username == uid)).first()
-        if user and user.locked_until and time.time() < user.locked_until:
-            session.clear()
-            if request.path.startswith('/api/'):
-                return {"error": "계정이 잠금 상태입니다."}, 403
-            return redirect(url_for('login_page'))
+# ─────────────── 미들웨어 ───────────────
+@app.middleware("http")
+async def enforce_lock(request: Request, call_next):
+    if request.url.path.startswith('/static'):
+        return await call_next(request)
+    uid = request.session.get('user_id')
+    if uid:
+        with Session(engine) as db_session:
+            user = db_session.exec(select(User).where(User.username == uid)).first()
+            if user and user.locked_until and time.time() < user.locked_until:
+                request.session.clear()
+                if request.url.path.startswith('/api/'):
+                    return JSONResponse({"error": "계정이 잠금 상태입니다."}, status_code=403)
+                return RedirectResponse(url='/login_page', status_code=302)
+    return await call_next(request)
 
 
-@app.route('/')
+# ─────────────── 기본 라우트 ───────────────
+@app.get('/')
 def index():
-    return redirect(url_for('home'))
+    return RedirectResponse('/main', status_code=302)
 
 
-@app.route('/login_page')
-def login_page():
-    show_toast = session.pop('show_login_toast', False)
-    return render_template('login.html', show_toast=show_toast)
+@app.get('/login_page')
+def login_page(request: Request):
+    show_toast = request.session.pop('show_login_toast', False)
+    return templates.TemplateResponse('login.html', {'request': request, 'show_toast': show_toast})
 
 
-# ───────────── Google OAuth ─────────────
-@app.route('/auth/google')
-def google_login():
-    redirect_uri = url_for('google_callback', _external=True)
-    return google.authorize_redirect(redirect_uri)
+# ─────────────── Google OAuth ───────────────
+@app.get('/auth/google')
+async def google_login(request: Request):
+    redirect_uri = request.url_for('google_callback')
+    return await google.authorize_redirect(request, str(redirect_uri))
 
 
-@app.route('/auth/google/callback')
-def google_callback():
+@app.get('/auth/google/callback', name='google_callback')
+async def google_callback(request: Request):
     try:
-        token = google.authorize_access_token()
+        token = await google.authorize_access_token(request)
     except Exception:
-        session.clear()
-        return redirect(url_for('login_page'))
+        request.session.clear()
+        return RedirectResponse('/login_page', status_code=302)
     userinfo = token.get('userinfo')
     if not userinfo:
-        return redirect(url_for('login_page'))
+        return RedirectResponse('/login_page', status_code=302)
 
     google_id = userinfo['sub']
     email = userinfo['email']
@@ -313,143 +324,145 @@ def google_callback():
     with Session(engine) as db_session:
         user = db_session.exec(select(User).where(User.google_id == google_id)).first()
         if not user:
-            # 신규 유저 → 닉네임 설정 페이지로
-            session['pending_google_id'] = google_id
-            session['pending_email'] = email
-            return redirect(url_for('set_nickname_page'))
-        # 잠금 확인
+            request.session['pending_google_id'] = google_id
+            request.session['pending_email'] = email
+            return RedirectResponse('/set_nickname', status_code=302)
         if user.locked_until and time.time() < user.locked_until:
-            session.clear()
-            return redirect(url_for('login_page'))
-        # 기존 유저 → 바로 로그인
-        session['user_id'] = user.username
-        session['nickname'] = user.nickname or user.username
-        session['show_login_toast'] = True
-        return redirect(url_for('home'))
+            request.session.clear()
+            return RedirectResponse('/login_page', status_code=302)
+        request.session['user_id'] = user.username
+        request.session['nickname'] = user.nickname or user.username
+        request.session['show_login_toast'] = True
+        return RedirectResponse('/main', status_code=302)
 
 
-@app.route('/set_nickname')
-def set_nickname_page():
-    if not session.get('pending_google_id'):
-        return redirect(url_for('login_page'))
-    return render_template('set-nickname.html')
+@app.get('/set_nickname')
+def set_nickname_page(request: Request):
+    if not request.session.get('pending_google_id'):
+        return RedirectResponse('/login_page', status_code=302)
+    return templates.TemplateResponse('set-nickname.html', {'request': request})
 
 
-@app.route('/set_nickname', methods=['POST'])
-def set_nickname_submit():
-    google_id = session.get('pending_google_id')
-    email = session.get('pending_email')
-    nickname = request.form.get('nickname', '').strip()
+@app.post('/set_nickname')
+async def set_nickname_submit(request: Request):
+    google_id = request.session.get('pending_google_id')
+    email = request.session.get('pending_email')
+    form = await request.form()
+    nickname = str(form.get('nickname', '')).strip()
 
     if not google_id or not email:
-        return redirect(url_for('login_page'))
+        return RedirectResponse('/login_page', status_code=302)
     if not nickname:
-        return render_template('set-nickname.html', error='닉네임을 입력해주세요.')
+        return templates.TemplateResponse('set-nickname.html', {'request': request, 'error': '닉네임을 입력해주세요.'})
     if len(nickname) > 20:
-        return render_template('set-nickname.html', error='닉네임은 20자 이하여야 합니다.')
+        return templates.TemplateResponse('set-nickname.html', {'request': request, 'error': '닉네임은 20자 이하여야 합니다.'})
 
     with Session(engine) as db_session:
         new_user = User(username=email, google_id=google_id, nickname=nickname)
         db_session.add(new_user)
         db_session.commit()
 
-    invalidate_user_cache()   # 신규 가입 시 캐시 무효화
-    session.pop('pending_google_id', None)
-    session.pop('pending_email', None)
-    session['user_id'] = email
-    session['nickname'] = nickname
-    session['show_login_toast'] = True
-    return redirect(url_for('home'))
+    invalidate_user_cache()
+    request.session.pop('pending_google_id', None)
+    request.session.pop('pending_email', None)
+    request.session['user_id'] = email
+    request.session['nickname'] = nickname
+    request.session['show_login_toast'] = True
+    return RedirectResponse('/main', status_code=302)
 
 
-# ───────────── 홈 / 로그아웃 ─────────────
-@app.route('/main')
-def home():
-    show_toast = session.pop('show_login_toast', False)
-    nickname = session.get('nickname', session.get('user_id', '게스트'))
+# ─────────────── 홈 / 로그아웃 ───────────────
+@app.get('/main')
+def home(request: Request):
+    show_toast = request.session.pop('show_login_toast', False)
+    nickname = request.session.get('nickname', request.session.get('user_id', '게스트'))
     with Session(engine) as db_session:
         owner = db_session.exec(select(User).where(User.is_owner == True)).first()
         admin_discord = owner.discord_id if owner and owner.discord_id else None
-    return render_template('main.html', user_id=nickname, show_toast=show_toast, is_admin=check_admin(), raw_user_id=session.get('user_id',''), admin_discord=admin_discord)
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('index'))
-
-
-
-
-# ───────────── 회원 정보 수정 ─────────────
-@app.route('/settings')
-def settings():
-    if 'user_id' not in session:
-        return redirect(url_for('login_page'))
-    return redirect(url_for('user_profile', target_username=session['user_id']))
+    return templates.TemplateResponse('main.html', {
+        'request': request,
+        'user_id': nickname,
+        'show_toast': show_toast,
+        'is_admin': check_admin(request.session),
+        'raw_user_id': request.session.get('user_id', ''),
+        'admin_discord': admin_discord,
+    })
 
 
-@app.route('/update_social', methods=['POST'])
-def update_social():
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    discord_id = request.form.get('discord_id', '').strip()
-    github_id  = request.form.get('github_id',  '').strip()
+@app.get('/logout')
+def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse('/', status_code=302)
+
+
+# ─────────────── 회원 정보 수정 ───────────────
+@app.get('/settings')
+def settings(request: Request):
+    if 'user_id' not in request.session:
+        return RedirectResponse('/login_page', status_code=302)
+    return RedirectResponse(f"/user/{request.session['user_id']}", status_code=302)
+
+
+@app.post('/update_social')
+async def update_social(request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    form = await request.form()
+    discord_id = str(form.get('discord_id', '')).strip()
+    github_id = str(form.get('github_id', '')).strip()
     with Session(engine) as db_session:
-        user = db_session.exec(select(User).where(User.username == session['user_id'])).first()
+        user = db_session.exec(select(User).where(User.username == request.session['user_id'])).first()
         if not user:
-            return {"error": "사용자를 찾을 수 없습니다."}, 404
+            return JSONResponse({"error": "사용자를 찾을 수 없습니다."}, status_code=404)
         user.discord_id = discord_id or None
-        user.github_id  = github_id  or None
+        user.github_id = github_id or None
         db_session.add(user)
         db_session.commit()
     return {"success": True}
 
 
-@app.route('/update_nickname', methods=['POST'])
-def update_nickname():
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    new_nickname = request.form.get('nickname', '').strip()
+@app.post('/update_nickname')
+async def update_nickname(request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    form = await request.form()
+    new_nickname = str(form.get('nickname', '')).strip()
     if not new_nickname:
-        return {"error": "닉네임을 입력해주세요."}, 400
+        return JSONResponse({"error": "닉네임을 입력해주세요."}, status_code=400)
     if len(new_nickname) > 20:
-        return {"error": "닉네임은 20자 이하여야 합니다."}, 400
+        return JSONResponse({"error": "닉네임은 20자 이하여야 합니다."}, status_code=400)
+    uid = request.session['user_id']
     with Session(engine) as db_session:
-        user = db_session.exec(select(User).where(User.username == session['user_id'])).first()
+        user = db_session.exec(select(User).where(User.username == uid)).first()
         if not user:
-            return {"error": "사용자를 찾을 수 없습니다."}, 404
+            return JSONResponse({"error": "사용자를 찾을 수 없습니다."}, status_code=404)
         user.nickname = new_nickname
         db_session.add(user)
-        uid = session['user_id']
-        # 공지 닉네임 업데이트
         for n in db_session.exec(select(Notice).where(Notice.author_id == uid)).all():
             n.author_nickname = new_nickname
             db_session.add(n)
-        # 팀 leader_name 업데이트
         for t in db_session.exec(select(Team).where(Team.leader_id == uid)).all():
             t.leader_name = new_nickname
             db_session.add(t)
-        # 팀원 display_name 업데이트
         for m in db_session.exec(select(TeamMember).where(TeamMember.user_id == uid)).all():
             m.display_name = new_nickname
             db_session.add(m)
-        # 구인 프로필 name 업데이트
         for p in db_session.exec(select(Profile).where(Profile.user_id == uid)).all():
             p.name = new_nickname
             db_session.add(p)
         db_session.commit()
-    session['nickname'] = new_nickname
-    invalidate_user_cache()   # 닉네임 변경 시 캐시 무효화
+    request.session['nickname'] = new_nickname
+    invalidate_user_cache()
     return {"success": True, "nickname": new_nickname}
 
 
-# ───────────── 멤버 보기 ─────────────
-@app.route('/members')
-def members_page():
-    if 'user_id' not in session:
-        return redirect(url_for('login_page'))
-    current_user = session['user_id']
-    nickname = session.get('nickname', current_user)
+# ─────────────── 멤버 보기 ───────────────
+@app.get('/members')
+def members_page(request: Request):
+    if 'user_id' not in request.session:
+        return RedirectResponse('/login_page', status_code=302)
+    current_user = request.session['user_id']
+    nickname = request.session.get('nickname', current_user)
 
     init_members = []
     try:
@@ -464,25 +477,27 @@ def members_page():
     except Exception:
         pass
 
-    return render_template(
-        'members.html',
-        user_id=nickname, is_admin=check_admin(), raw_user_id=current_user,
-        init_members=json.dumps(init_members, ensure_ascii=False),
-    )
+    return templates.TemplateResponse('members.html', {
+        'request': request,
+        'user_id': nickname,
+        'is_admin': check_admin(request.session),
+        'raw_user_id': current_user,
+        'init_members': json.dumps(init_members, ensure_ascii=False),
+    })
 
 
-@app.route('/api/session-check')
-def session_check():
-    if 'user_id' not in session:
-        return {"ok": False}, 401
+@app.get('/api/session-check')
+def session_check(request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"ok": False}, status_code=401)
     return {"ok": True}
 
 
-@app.route('/api/members', methods=['GET'])
-def get_members():
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    current_uid = session['user_id']
+@app.get('/api/members')
+def get_members(request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    current_uid = request.session['user_id']
     with Session(engine) as db_session:
         users = db_session.exec(select(User)).all()
         result = [
@@ -496,10 +511,10 @@ def get_members():
     return {"members": result}
 
 
-# ───────────── 공지사항 ─────────────
-@app.route('/notice')
-def notice():
-    nickname = session.get('nickname', session.get('user_id', '게스트'))
+# ─────────────── 공지사항 ───────────────
+@app.get('/notice')
+def notice(request: Request):
+    nickname = request.session.get('nickname', request.session.get('user_id', '게스트'))
 
     init_notices = []
     try:
@@ -516,16 +531,18 @@ def notice():
     except Exception:
         pass
 
-    return render_template(
-        'notice.html',
-        user_id=nickname, current_user=session.get('user_id', ''),
-        is_admin=check_admin(), raw_user_id=session.get('user_id',''),
-        init_notices=json.dumps(init_notices, ensure_ascii=False),
-    )
+    return templates.TemplateResponse('notice.html', {
+        'request': request,
+        'user_id': nickname,
+        'current_user': request.session.get('user_id', ''),
+        'is_admin': check_admin(request.session),
+        'raw_user_id': request.session.get('user_id', ''),
+        'init_notices': json.dumps(init_notices, ensure_ascii=False),
+    })
 
 
-@app.route('/api/notices', methods=['GET'])
-def get_notices():
+@app.get('/api/notices')
+def get_notices(request: Request):
     with Session(engine) as db_session:
         notices = db_session.exec(
             select(Notice).order_by(Notice.is_pinned.desc(), Notice.created_at.desc())
@@ -543,20 +560,21 @@ def get_notices():
     ]}
 
 
-@app.route('/api/notices', methods=['POST'])
-def create_notice():
-    if not check_superadmin():
-        return {"error": "권한이 없습니다."}, 403
-    title = request.form.get('title', '').strip()
-    content = request.form.get('content', '').strip()
-    is_pinned = request.form.get('is_pinned', 'false') == 'true'
+@app.post('/api/notices')
+async def create_notice(request: Request):
+    if not check_superadmin(request.session):
+        return JSONResponse({"error": "권한이 없습니다."}, status_code=403)
+    form = await request.form()
+    title = str(form.get('title', '')).strip()
+    content = str(form.get('content', '')).strip()
+    is_pinned = str(form.get('is_pinned', 'false')) == 'true'
     if not title or not content:
-        return {"error": "제목과 내용을 입력해주세요."}, 400
-    nickname = session.get('nickname', session['user_id'])
+        return JSONResponse({"error": "제목과 내용을 입력해주세요."}, status_code=400)
+    nickname = request.session.get('nickname', request.session['user_id'])
     with Session(engine) as db_session:
         notice = Notice(
             title=title, content=content,
-            author_id=session['user_id'], author_nickname=nickname,
+            author_id=request.session['user_id'], author_nickname=nickname,
             is_pinned=is_pinned,
             created_at=time.time(), updated_at=time.time()
         )
@@ -566,19 +584,20 @@ def create_notice():
     return {"success": True, "id": notice.id}
 
 
-@app.route('/api/notices/<int:notice_id>', methods=['PUT'])
-def update_notice(notice_id):
-    if not check_superadmin():
-        return {"error": "권한이 없습니다."}, 403
-    title = request.form.get('title', '').strip()
-    content = request.form.get('content', '').strip()
-    is_pinned = request.form.get('is_pinned', 'false') == 'true'
+@app.put('/api/notices/{notice_id}')
+async def update_notice(notice_id: int, request: Request):
+    if not check_superadmin(request.session):
+        return JSONResponse({"error": "권한이 없습니다."}, status_code=403)
+    form = await request.form()
+    title = str(form.get('title', '')).strip()
+    content = str(form.get('content', '')).strip()
+    is_pinned = str(form.get('is_pinned', 'false')) == 'true'
     if not title or not content:
-        return {"error": "제목과 내용을 입력해주세요."}, 400
+        return JSONResponse({"error": "제목과 내용을 입력해주세요."}, status_code=400)
     with Session(engine) as db_session:
         notice = db_session.get(Notice, notice_id)
         if not notice:
-            return {"error": "공지를 찾을 수 없습니다."}, 404
+            return JSONResponse({"error": "공지를 찾을 수 없습니다."}, status_code=404)
         notice.title = title
         notice.content = content
         notice.is_pinned = is_pinned
@@ -588,29 +607,29 @@ def update_notice(notice_id):
     return {"success": True}
 
 
-@app.route('/api/notices/<int:notice_id>', methods=['DELETE'])
-def delete_notice(notice_id):
-    if not check_superadmin():
-        return {"error": "권한이 없습니다."}, 403
+@app.delete('/api/notices/{notice_id}')
+def delete_notice(notice_id: int, request: Request):
+    if not check_superadmin(request.session):
+        return JSONResponse({"error": "권한이 없습니다."}, status_code=403)
     with Session(engine) as db_session:
         notice = db_session.get(Notice, notice_id)
         if not notice:
-            return {"error": "공지를 찾을 수 없습니다."}, 404
+            return JSONResponse({"error": "공지를 찾을 수 없습니다."}, status_code=404)
         db_session.delete(notice)
         db_session.commit()
     return {"success": True}
 
 
-# ───────────── 공지 댓글 ─────────────
-@app.route('/api/notices/<int:notice_id>/comments', methods=['GET'])
-def get_notice_comments(notice_id):
+# ─────────────── 공지 댓글 ───────────────
+@app.get('/api/notices/{notice_id}/comments')
+def get_notice_comments(notice_id: int, request: Request):
     with Session(engine) as db_session:
         comments = db_session.exec(
             select(NoticeComment)
             .where(NoticeComment.notice_id == notice_id)
             .order_by(NoticeComment.created_at.asc())
         ).all()
-    current_uid = session.get('user_id')
+    current_uid = request.session.get('user_id')
     return {"comments": [
         {
             "id": c.id,
@@ -623,22 +642,23 @@ def get_notice_comments(notice_id):
     ]}
 
 
-@app.route('/api/notices/<int:notice_id>/comments', methods=['POST'])
-def post_notice_comment(notice_id):
-    if 'user_id' not in session:
-        return {"error": "로그인이 필요합니다."}, 401
-    content = request.form.get('content', '').strip()
+@app.post('/api/notices/{notice_id}/comments')
+async def post_notice_comment(notice_id: int, request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "로그인이 필요합니다."}, status_code=401)
+    form = await request.form()
+    content = str(form.get('content', '')).strip()
     if not content:
-        return {"error": "내용을 입력해주세요."}, 400
+        return JSONResponse({"error": "내용을 입력해주세요."}, status_code=400)
     if len(content) > 100:
-        return {"error": "댓글은 100자 이내여야 합니다."}, 400
+        return JSONResponse({"error": "댓글은 100자 이내여야 합니다."}, status_code=400)
     with Session(engine) as db_session:
         notice = db_session.get(Notice, notice_id)
         if not notice:
-            return {"error": "공지를 찾을 수 없습니다."}, 404
-        uid = session['user_id']
+            return JSONResponse({"error": "공지를 찾을 수 없습니다."}, status_code=404)
+        uid = request.session['user_id']
         user = db_session.exec(select(User).where(User.username == uid)).first()
-        nickname = user.nickname or uid if user else uid
+        nickname = (user.nickname or uid) if user else uid
         comment = NoticeComment(
             notice_id=notice_id,
             author_id=uid,
@@ -652,35 +672,34 @@ def post_notice_comment(notice_id):
     return {"success": True, "id": comment.id, "author_nickname": nickname, "content": content, "created_at": comment.created_at}
 
 
-@app.route('/api/notices/<int:notice_id>/comments/<int:comment_id>', methods=['DELETE'])
-def delete_notice_comment(notice_id, comment_id):
-    if 'user_id' not in session:
-        return {"error": "로그인이 필요합니다."}, 401
-    uid = session['user_id']
+@app.delete('/api/notices/{notice_id}/comments/{comment_id}')
+def delete_notice_comment(notice_id: int, comment_id: int, request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "로그인이 필요합니다."}, status_code=401)
+    uid = request.session['user_id']
     with Session(engine) as db_session:
         comment = db_session.get(NoticeComment, comment_id)
         if not comment or comment.notice_id != notice_id:
-            return {"error": "댓글을 찾을 수 없습니다."}, 404
-        # 본인 또는 관리자만 삭제 가능
-        if comment.author_id != uid and not check_admin():
-            return {"error": "권한이 없습니다."}, 403
+            return JSONResponse({"error": "댓글을 찾을 수 없습니다."}, status_code=404)
+        if comment.author_id != uid and not check_admin(request.session):
+            return JSONResponse({"error": "권한이 없습니다."}, status_code=403)
         db_session.delete(comment)
         db_session.commit()
     return {"success": True}
 
 
-# ───────────── 관리자 페이지 ─────────────
-@app.route('/admin')
-def admin_page():
-    if 'user_id' not in session:
-        return redirect(url_for('login_page'))
-    if not check_admin():
-        return redirect(url_for('home'))
-    nickname = session.get('nickname', session['user_id'])
+# ─────────────── 관리자 페이지 ───────────────
+@app.get('/admin')
+def admin_page(request: Request):
+    if 'user_id' not in request.session:
+        return RedirectResponse('/login_page', status_code=302)
+    if not check_admin(request.session):
+        return RedirectResponse('/main', status_code=302)
+    nickname = request.session.get('nickname', request.session['user_id'])
 
     init_notices, init_users, init_messages = [], [], []
     try:
-        users = get_all_users()   # 캐시 활용
+        users = get_all_users()
         nick_map = {u.username: (u.nickname or u.username) for u in users}
         with Session(engine) as db_session:
             notices  = db_session.exec(select(Notice).order_by(Notice.is_pinned.desc(), Notice.created_at.desc())).all()
@@ -715,56 +734,81 @@ def admin_page():
     except Exception:
         pass
 
-    return render_template(
-        'admin.html',
-        user_id=nickname, current_user=session['user_id'],
-        is_superadmin=check_superadmin(), is_owner=check_owner(),
-        init_notices=json.dumps(init_notices, ensure_ascii=False),
-        init_users=json.dumps(init_users, ensure_ascii=False),
-        init_messages=json.dumps(init_messages, ensure_ascii=False),
-    )
+    return templates.TemplateResponse('admin.html', {
+        'request': request,
+        'user_id': nickname,
+        'current_user': request.session['user_id'],
+        'is_superadmin': check_superadmin(request.session),
+        'is_owner': check_owner(request.session),
+        'init_notices': json.dumps(init_notices, ensure_ascii=False),
+        'init_users': json.dumps(init_users, ensure_ascii=False),
+        'init_messages': json.dumps(init_messages, ensure_ascii=False),
+    })
 
 
-@app.route('/admin/setup', methods=['GET', 'POST'])
-def admin_setup():
-    """첫 관리자 설정"""
-    if 'user_id' not in session:
-        return redirect(url_for('login_page'))
-    if request.method == 'GET':
-        return '''
+@app.get('/admin/setup')
+def admin_setup_get(request: Request):
+    if 'user_id' not in request.session:
+        return RedirectResponse('/login_page', status_code=302)
+    # 이미 총괄 관리자가 존재하면 차단
+    with Session(engine) as db_session:
+        existing = db_session.exec(select(User).where(User.is_superadmin == True)).first()
+    if existing:
+        return HTMLResponse('''
         <style>body{font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background:#f5f5f5;}
-        .box{background:#fff;padding:32px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.1);width:320px;}
-        h2{margin:0 0 20px;font-size:18px;}
-        input{width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;margin-bottom:12px;}
-        button{width:100%;padding:12px;background:#4f8ef7;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;}
-        .msg{margin-top:12px;font-size:13px;text-align:center;}</style>
-        <div class="box"><h2>🛡️ 관리자 등록</h2>
-        <form method="POST">
-        <input type="password" name="secret" placeholder="시크릿 키 입력" required>
-        <button type="submit">관리자로 등록</button>
-        </form></div>'''
-    secret = request.form.get('secret', '')
-    if secret != os.environ.get('ADMIN_SECRET'):
-        return '''<style>body{font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background:#f5f5f5;}
         .box{background:#fff;padding:32px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.1);width:320px;text-align:center;}
         a{color:#4f8ef7;}</style>
-        <div class="box">❌ 잘못된 시크릿 키입니다.<br><br><a href="/admin/setup">다시 시도</a></div>'''
+        <div class="box">🔒 이미 관리자가 등록되어 있습니다.<br><br><a href="/main">홈으로 돌아가기</a></div>''')
+    return HTMLResponse('''
+    <style>body{font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background:#f5f5f5;}
+    .box{background:#fff;padding:32px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.1);width:320px;}
+    h2{margin:0 0 20px;font-size:18px;}
+    input{width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;margin-bottom:12px;}
+    button{width:100%;padding:12px;background:#4f8ef7;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;}
+    .msg{margin-top:12px;font-size:13px;text-align:center;}</style>
+    <div class="box"><h2>🛡️ 관리자 등록</h2>
+    <form method="POST">
+    <input type="password" name="secret" placeholder="시크릿 키 입력" required>
+    <button type="submit">관리자로 등록</button>
+    </form></div>''')
+
+
+@app.post('/admin/setup')
+async def admin_setup_post(request: Request):
+    if 'user_id' not in request.session:
+        return RedirectResponse('/login_page', status_code=302)
+    form = await request.form()
+    secret = str(form.get('secret', ''))
+    if secret != os.environ.get('ADMIN_SECRET'):
+        return HTMLResponse('''
+        <style>body{font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background:#f5f5f5;}
+        .box{background:#fff;padding:32px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.1);width:320px;text-align:center;}
+        a{color:#4f8ef7;}</style>
+        <div class="box">❌ 잘못된 시크릿 키입니다.<br><br><a href="/admin/setup">다시 시도</a></div>''')
     with Session(engine) as db_session:
-        user = db_session.exec(select(User).where(User.username == session['user_id'])).first()
+        # 이미 총괄 관리자가 존재하면 차단
+        existing = db_session.exec(select(User).where(User.is_superadmin == True)).first()
+        if existing:
+            return HTMLResponse('''
+            <style>body{font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background:#f5f5f5;}
+            .box{background:#fff;padding:32px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.1);width:320px;text-align:center;}
+            a{color:#4f8ef7;}</style>
+            <div class="box">🔒 이미 관리자가 등록되어 있습니다.<br><br><a href="/main">홈으로 돌아가기</a></div>''')
+        user = db_session.exec(select(User).where(User.username == request.session['user_id'])).first()
         if not user:
-            return redirect(url_for('login_page'))
+            return RedirectResponse('/login_page', status_code=302)
         user.is_admin = True
         user.is_superadmin = True
         user.is_owner = True
         db_session.add(user)
         db_session.commit()
-    return redirect(url_for('admin_page'))
+    return RedirectResponse('/admin', status_code=302)
 
 
-@app.route('/api/admin/users', methods=['GET'])
-def admin_get_users():
-    if not check_admin():
-        return {"error": "권한이 없습니다."}, 403
+@app.get('/api/admin/users')
+def admin_get_users(request: Request):
+    if not check_admin(request.session):
+        return JSONResponse({"error": "권한이 없습니다."}, status_code=403)
     with Session(engine) as db_session:
         users = db_session.exec(select(User)).all()
         profiles = db_session.exec(select(Profile)).all()
@@ -791,29 +835,30 @@ def admin_get_users():
     ]}
 
 
-@app.route('/api/admin/users/<target_id>/lock', methods=['POST'])
-def admin_lock_user(target_id):
-    if not check_superadmin():
-        return {"error": "권한이 없습니다."}, 403
-    minutes = int(request.form.get('minutes', 30))
+@app.post('/api/admin/users/{target_id}/lock')
+async def admin_lock_user(target_id: str, request: Request):
+    if not check_superadmin(request.session):
+        return JSONResponse({"error": "권한이 없습니다."}, status_code=403)
+    form = await request.form()
+    minutes = int(form.get('minutes', 30))
     with Session(engine) as db_session:
         user = db_session.exec(select(User).where(User.username == target_id)).first()
         if not user:
-            return {"error": "사용자를 찾을 수 없습니다."}, 404
+            return JSONResponse({"error": "사용자를 찾을 수 없습니다."}, status_code=404)
         user.locked_until = time.time() + minutes * 60
         db_session.add(user)
         db_session.commit()
     return {"success": True}
 
 
-@app.route('/api/admin/users/<target_id>/unlock', methods=['POST'])
-def admin_unlock_user(target_id):
-    if not check_superadmin():
-        return {"error": "권한이 없습니다."}, 403
+@app.post('/api/admin/users/{target_id}/unlock')
+def admin_unlock_user(target_id: str, request: Request):
+    if not check_superadmin(request.session):
+        return JSONResponse({"error": "권한이 없습니다."}, status_code=403)
     with Session(engine) as db_session:
         user = db_session.exec(select(User).where(User.username == target_id)).first()
         if not user:
-            return {"error": "사용자를 찾을 수 없습니다."}, 404
+            return JSONResponse({"error": "사용자를 찾을 수 없습니다."}, status_code=404)
         user.locked_until = None
         user.failed_attempts = 0
         db_session.add(user)
@@ -821,19 +866,18 @@ def admin_unlock_user(target_id):
     return {"success": True}
 
 
-@app.route('/api/admin/users/<target_id>/toggle-admin', methods=['POST'])
-def admin_toggle_admin(target_id):
-    if not check_superadmin():
-        return {"error": "권한이 없습니다."}, 403
-    if target_id == session['user_id']:
-        return {"error": "본인의 관리자 권한은 변경할 수 없습니다."}, 400
+@app.post('/api/admin/users/{target_id}/toggle-admin')
+def admin_toggle_admin(target_id: str, request: Request):
+    if not check_superadmin(request.session):
+        return JSONResponse({"error": "권한이 없습니다."}, status_code=403)
+    if target_id == request.session['user_id']:
+        return JSONResponse({"error": "본인의 관리자 권한은 변경할 수 없습니다."}, status_code=400)
     with Session(engine) as db_session:
         user = db_session.exec(select(User).where(User.username == target_id)).first()
         if not user:
-            return {"error": "사용자를 찾을 수 없습니다."}, 404
-        # 관리자 해제는 owner만 가능
-        if user.is_admin and not check_owner():
-            return {"error": "관리자 해제는 최고 관리자만 할 수 있습니다."}, 403
+            return JSONResponse({"error": "사용자를 찾을 수 없습니다."}, status_code=404)
+        if user.is_admin and not check_owner(request.session):
+            return JSONResponse({"error": "관리자 해제는 최고 관리자만 할 수 있습니다."}, status_code=403)
         user.is_admin = not user.is_admin
         user.is_superadmin = user.is_admin
         db_session.add(user)
@@ -841,17 +885,16 @@ def admin_toggle_admin(target_id):
     return {"success": True, "is_admin": user.is_admin}
 
 
-@app.route('/api/admin/users/<target_id>', methods=['DELETE'])
-def admin_delete_user(target_id):
-    if not check_superadmin():
-        return {"error": "권한이 없습니다."}, 403
-    if target_id == session['user_id']:
-        return {"error": "본인 계정은 삭제할 수 없습니다."}, 400
+@app.delete('/api/admin/users/{target_id}')
+def admin_delete_user(target_id: str, request: Request):
+    if not check_superadmin(request.session):
+        return JSONResponse({"error": "권한이 없습니다."}, status_code=403)
+    if target_id == request.session['user_id']:
+        return JSONResponse({"error": "본인 계정은 삭제할 수 없습니다."}, status_code=400)
     with Session(engine) as db_session:
         user = db_session.exec(select(User).where(User.username == target_id)).first()
         if not user:
-            return {"error": "사용자를 찾을 수 없습니다."}, 404
-        # 관련 데이터 삭제
+            return JSONResponse({"error": "사용자를 찾을 수 없습니다."}, status_code=404)
         for profile in db_session.exec(select(Profile).where(Profile.user_id == target_id)).all():
             db_session.delete(profile)
         for notif in db_session.exec(select(Notification).where(
@@ -867,11 +910,11 @@ def admin_delete_user(target_id):
     return {"success": True}
 
 
-# ───────────── 관리자 메시지 관리 ─────────────
-@app.route('/api/admin/messages', methods=['GET'])
-def admin_get_messages():
-    if not check_admin():
-        return {"error": "권한이 없습니다."}, 403
+# ─────────────── 관리자 메시지 관리 ───────────────
+@app.get('/api/admin/messages')
+def admin_get_messages(request: Request):
+    if not check_admin(request.session):
+        return JSONResponse({"error": "권한이 없습니다."}, status_code=403)
     with Session(engine) as db_session:
         messages = db_session.exec(
             select(DirectMessage).order_by(DirectMessage.created_at.desc())
@@ -890,23 +933,23 @@ def admin_get_messages():
     return {"messages": result}
 
 
-@app.route('/api/admin/messages/<int:msg_id>', methods=['DELETE'])
-def admin_delete_message(msg_id):
-    if not check_admin():
-        return {"error": "권한이 없습니다."}, 403
+@app.delete('/api/admin/messages/{msg_id}')
+def admin_delete_message(msg_id: int, request: Request):
+    if not check_admin(request.session):
+        return JSONResponse({"error": "권한이 없습니다."}, status_code=403)
     with Session(engine) as db_session:
         msg = db_session.get(DirectMessage, msg_id)
         if not msg:
-            return {"error": "메시지를 찾을 수 없습니다."}, 404
+            return JSONResponse({"error": "메시지를 찾을 수 없습니다."}, status_code=404)
         db_session.delete(msg)
         db_session.commit()
     return {"success": True}
 
 
-# ───────────── 닉네임 검색 ─────────────
-@app.route('/api/search')
-def api_search():
-    q = request.args.get('q', '').strip().lower()
+# ─────────────── 닉네임 검색 ───────────────
+@app.get('/api/search')
+def api_search(request: Request):
+    q = request.query_params.get('q', '').strip().lower()
     if not q:
         return {"results": []}
     with Session(engine) as db_session:
@@ -922,18 +965,17 @@ def api_search():
     return {"results": results}
 
 
-# ───────────── 활동 통계 ─────────────
-@app.route('/api/stats')
-def api_stats():
+# ─────────────── 활동 통계 ───────────────
+@app.get('/api/stats')
+def api_stats(request: Request):
     with Session(engine) as db_session:
         user_count = db_session.exec(select(func.count(User.id))).one()
         profile_count = db_session.exec(select(func.count(Profile.id))).one()
     return {"users": user_count, "profiles": profile_count}
 
 
-# ───────────── 새 글 확인용 최신 타임스탬프 ─────────────
-@app.route('/api/new-activity')
-def new_activity():
+@app.get('/api/new-activity')
+def new_activity(request: Request):
     with Session(engine) as db_session:
         profiles = db_session.exec(select(Profile)).all()
         notices  = db_session.exec(select(Notice)).all()
@@ -942,15 +984,15 @@ def new_activity():
     return {"profile_latest": profile_latest, "notice_latest": notice_latest}
 
 
-# ───────────── 구인 게시판 ─────────────
-@app.route('/user/<target_username>')
-def user_profile(target_username):
-    if 'user_id' not in session:
-        return redirect(url_for('index'))
+# ─────────────── 구인 게시판 ───────────────
+@app.get('/user/{target_username}')
+def user_profile(target_username: str, request: Request):
+    if 'user_id' not in request.session:
+        return RedirectResponse('/', status_code=302)
     with Session(engine) as db_session:
         target = db_session.exec(select(User).where(User.username == target_username)).first()
         if not target:
-            return redirect(url_for('home'))
+            return RedirectResponse('/main', status_code=302)
         profiles = db_session.exec(select(Profile).where(Profile.user_id == target_username)).all()
         led_teams = db_session.exec(select(Team).where(Team.leader_id == target_username)).all()
         member_teams_rows = db_session.exec(
@@ -983,33 +1025,33 @@ def user_profile(target_username):
                 team_list.append({"id": t.id, "name": t.name, "dev_field": t.dev_field, "role": "팀원",
                                    "leader_name": nick_map.get(t.leader_id, t.leader_name)})
 
-    is_self = session['user_id'] == target_username
-    nickname = session.get('nickname', session['user_id'])
-    return render_template('user_profile.html',
-        user_id=nickname,
-        target_username=target_username,
-        target_nickname=target.nickname or target_username,
-        profiles=profile_list,
-        teams=team_list,
-        is_self=is_self,
-        is_admin=check_admin(),
-        discord_id=target.discord_id or '',
-        github_id=target.github_id or '',
-        raw_user_id=session.get('user_id', ''))
+    is_self = request.session['user_id'] == target_username
+    nickname = request.session.get('nickname', request.session['user_id'])
+    return templates.TemplateResponse('user_profile.html', {
+        'request': request,
+        'user_id': nickname,
+        'target_username': target_username,
+        'target_nickname': target.nickname or target_username,
+        'profiles': profile_list,
+        'teams': team_list,
+        'is_self': is_self,
+        'is_admin': check_admin(request.session),
+        'discord_id': target.discord_id or '',
+        'github_id': target.github_id or '',
+        'raw_user_id': request.session.get('user_id', ''),
+    })
 
 
-@app.route('/recruit')
-def recruit():
-    if 'user_id' not in session:
-        return redirect(url_for('index'))
-    current_user = session['user_id']
-    nickname = session.get('nickname', current_user)
+@app.get('/recruit')
+def recruit(request: Request):
+    if 'user_id' not in request.session:
+        return RedirectResponse('/', status_code=302)
+    current_user = request.session['user_id']
+    nickname = request.session.get('nickname', current_user)
 
-    # ① 기본 탭(구인글)만 SSR — 쿼리 2개 (User는 캐시)
-    # ② Team/TeamMember/GroupMessage 는 Lazy (탭 클릭 시 API 호출)
     init_profiles = []
     try:
-        users = get_all_users()   # 캐시에서 즉시 반환 (최초 1회만 DB 조회)
+        users = get_all_users()
         with Session(engine) as db_session:
             profiles  = db_session.exec(select(Profile).where(Profile.post_type == 'recruit').order_by(Profile.created_at)).all()
             interests = db_session.exec(select(RecruitInterest).where(RecruitInterest.sender_id == current_user)).all()
@@ -1034,19 +1076,21 @@ def recruit():
     except Exception:
         pass
 
-    return render_template(
-        'recruit.html',
-        user_id=nickname, is_admin=check_admin(), raw_user_id=current_user,
-        init_profiles=json.dumps(init_profiles, ensure_ascii=False),
-    )
+    return templates.TemplateResponse('recruit.html', {
+        'request': request,
+        'user_id': nickname,
+        'is_admin': check_admin(request.session),
+        'raw_user_id': current_user,
+        'init_profiles': json.dumps(init_profiles, ensure_ascii=False),
+    })
 
 
-@app.route('/api/profiles', methods=['GET'])
-def get_profiles():
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    current_user = session['user_id']
-    ptype = request.args.get('type', 'recruit')
+@app.get('/api/profiles')
+def get_profiles(request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    current_user = request.session['user_id']
+    ptype = request.query_params.get('type', 'recruit')
     try:
         with Session(engine) as db_session:
             profiles = db_session.exec(
@@ -1084,35 +1128,36 @@ def get_profiles():
             else:
                 others.append(data)
         return {"profiles": mine + others}
-    except Exception as e:
-        return {"error": "데이터를 불러오는 중 오류가 발생했습니다.", "profiles": []}, 500
+    except Exception:
+        return JSONResponse({"error": "데이터를 불러오는 중 오류가 발생했습니다.", "profiles": []}, status_code=500)
 
 
-@app.route('/api/profiles', methods=['POST'])
-def create_profile():
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    current_user = session['user_id']
-    post_type = request.form.get('post_type', 'recruit').strip()
-    name = session.get('nickname', current_user)
-    class_number = request.form.get('class_number', '').strip()
-    major = request.form.get('major', '').strip()
-    bio = request.form.get('bio', '').strip()
-    past_languages = request.form.get('past_languages', '').strip()
-    current_languages = request.form.get('current_languages', '').strip()
-    profile_image = request.form.get('profile_image', '').strip() or None
-    dev_field = request.form.get('dev_field', '').strip() or None
+@app.post('/api/profiles')
+async def create_profile(request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    current_user = request.session['user_id']
+    form = await request.form()
+    post_type = str(form.get('post_type', 'recruit')).strip()
+    name = request.session.get('nickname', current_user)
+    class_number = str(form.get('class_number', '')).strip()
+    major = str(form.get('major', '')).strip()
+    bio = str(form.get('bio', '')).strip()
+    past_languages = str(form.get('past_languages', '')).strip()
+    current_languages = str(form.get('current_languages', '')).strip()
+    profile_image = str(form.get('profile_image', '')).strip() or None
+    dev_field = str(form.get('dev_field', '')).strip() or None
     if not class_number or not major:
-        return {"error": "반/번호, 전공은 필수입니다."}, 400
+        return JSONResponse({"error": "반/번호, 전공은 필수입니다."}, status_code=400)
     if post_type == 'job_seek' and not dev_field:
-        return {"error": "개발 분야를 선택해주세요."}, 400
+        return JSONResponse({"error": "개발 분야를 선택해주세요."}, status_code=400)
     try:
         with Session(engine) as db_session:
             existing = db_session.exec(
                 select(Profile).where(Profile.user_id == current_user, Profile.post_type == post_type)
             ).first()
             if existing:
-                return {"error": "이미 해당 유형의 프로필이 등록되어 있습니다."}, 400
+                return JSONResponse({"error": "이미 해당 유형의 프로필이 등록되어 있습니다."}, status_code=400)
             profile = Profile(
                 user_id=current_user,
                 name=name,
@@ -1147,22 +1192,21 @@ def create_profile():
                     "owner_id": current_user,
                 }
             }
-    except Exception as e:
-        return {"error": "프로필 등록 중 오류가 발생했습니다. 다시 시도해주세요."}, 500
+    except Exception:
+        return JSONResponse({"error": "프로필 등록 중 오류가 발생했습니다. 다시 시도해주세요."}, status_code=500)
 
 
-# ───────────── 팀 게시판 ─────────────
-@app.route('/api/teams', methods=['GET'])
-def get_teams():
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    current_user = session['user_id']
+# ─────────────── 팀 게시판 ───────────────
+@app.get('/api/teams')
+def get_teams(request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    current_user = request.session['user_id']
     try:
         with Session(engine) as db_session:
             teams = db_session.exec(select(Team).order_by(Team.created_at)).all()
             members_all = db_session.exec(select(TeamMember)).all()
             users = db_session.exec(select(User)).all()
-        # 실시간 닉네임 맵 (user_id → 현재 닉네임)
         nick_map = {u.username: (u.nickname or u.username) for u in users}
         mem_map = {}
         for m in members_all:
@@ -1189,23 +1233,24 @@ def get_teams():
                 "pending_list": [{"id": m.id, "user_id": m.user_id, "display_name": nick_map.get(m.user_id, m.display_name)} for m in pending] if t.leader_id == current_user else [],
             })
         return {"teams": result}
-    except Exception as e:
-        return {"error": "데이터를 불러오는 중 오류가 발생했습니다.", "teams": []}, 500
+    except Exception:
+        return JSONResponse({"error": "데이터를 불러오는 중 오류가 발생했습니다.", "teams": []}, status_code=500)
 
 
-@app.route('/api/teams', methods=['POST'])
-def create_team():
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    current_user = session['user_id']
-    nickname = session.get('nickname', current_user)
-    name = request.form.get('name', '').strip()
-    description = request.form.get('description', '').strip()
-    dev_field = request.form.get('dev_field', '').strip()
-    max_members = int(request.form.get('max_members', 4))
-    team_image = request.form.get('team_image', '').strip() or None
+@app.post('/api/teams')
+async def create_team(request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    current_user = request.session['user_id']
+    nickname = request.session.get('nickname', current_user)
+    form = await request.form()
+    name = str(form.get('name', '')).strip()
+    description = str(form.get('description', '')).strip()
+    dev_field = str(form.get('dev_field', '')).strip()
+    max_members = int(form.get('max_members', 4))
+    team_image = str(form.get('team_image', '')).strip() or None
     if not name:
-        return {"error": "팀 이름은 필수입니다."}, 400
+        return JSONResponse({"error": "팀 이름은 필수입니다."}, status_code=400)
     with Session(engine) as db_session:
         team = Team(leader_id=current_user, leader_name=nickname,
                     name=name, description=description,
@@ -1217,16 +1262,16 @@ def create_team():
     return {"success": True}
 
 
-@app.route('/api/teams/<int:team_id>', methods=['DELETE'])
-def delete_team(team_id):
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
+@app.delete('/api/teams/{team_id}')
+def delete_team(team_id: int, request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
     with Session(engine) as db_session:
         team = db_session.get(Team, team_id)
         if not team:
-            return {"error": "팀을 찾을 수 없습니다."}, 404
-        if team.leader_id != session['user_id'] and not check_admin():
-            return {"error": "권한이 없습니다."}, 403
+            return JSONResponse({"error": "팀을 찾을 수 없습니다."}, status_code=404)
+        if team.leader_id != request.session['user_id'] and not check_admin(request.session):
+            return JSONResponse({"error": "권한이 없습니다."}, status_code=403)
         for m in db_session.exec(select(TeamMember).where(TeamMember.team_id == team_id)).all():
             db_session.delete(m)
         db_session.delete(team)
@@ -1234,42 +1279,43 @@ def delete_team(team_id):
     return {"success": True}
 
 
-@app.route('/api/teams/<int:team_id>', methods=['PUT'])
-def update_team(team_id):
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
+@app.put('/api/teams/{team_id}')
+async def update_team(team_id: int, request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    form = await request.form()
     with Session(engine) as db_session:
         team = db_session.get(Team, team_id)
         if not team:
-            return {"error": "팀을 찾을 수 없습니다."}, 404
-        if team.leader_id != session['user_id']:
-            return {"error": "권한이 없습니다."}, 403
-        new_name = request.form.get('name', '').strip()
+            return JSONResponse({"error": "팀을 찾을 수 없습니다."}, status_code=404)
+        if team.leader_id != request.session['user_id']:
+            return JSONResponse({"error": "권한이 없습니다."}, status_code=403)
+        new_name = str(form.get('name', '')).strip()
         if new_name:
             if len(new_name) > 30:
-                return {"error": "팀 이름은 30자 이내여야 합니다."}, 400
+                return JSONResponse({"error": "팀 이름은 30자 이내여야 합니다."}, status_code=400)
             team.name = new_name
-        new_desc = request.form.get('description')
+        new_desc = form.get('description')
         if new_desc is not None:
-            if len(new_desc.strip()) > 50:
-                return {"error": "팀 소개는 50자 이내여야 합니다."}, 400
-            team.description = new_desc.strip()
-        new_field = request.form.get('dev_field')
+            if len(str(new_desc).strip()) > 50:
+                return JSONResponse({"error": "팀 소개는 50자 이내여야 합니다."}, status_code=400)
+            team.description = str(new_desc).strip()
+        new_field = form.get('dev_field')
         if new_field is not None:
-            team.dev_field = new_field.strip()
-        new_image = request.form.get('team_image')
+            team.dev_field = str(new_field).strip()
+        new_image = form.get('team_image')
         if new_image is not None:
-            team.team_image = new_image.strip() or None
-        new_max = request.form.get('max_members')
+            team.team_image = str(new_image).strip() or None
+        new_max = form.get('max_members')
         if new_max:
             new_max = int(new_max)
             accepted_count = db_session.exec(
                 select(func.count()).where(TeamMember.team_id == team_id, TeamMember.status == 'accepted')
             ).one()
             if new_max < accepted_count:
-                return {"error": f"현재 팀원이 {accepted_count}명이므로 {accepted_count}명 이상으로 설정해야 합니다."}, 400
+                return JSONResponse({"error": f"현재 팀원이 {accepted_count}명이므로 {accepted_count}명 이상으로 설정해야 합니다."}, status_code=400)
             if new_max < 2 or new_max > 20:
-                return {"error": "인원은 2~20명 사이여야 합니다."}, 400
+                return JSONResponse({"error": "인원은 2~20명 사이여야 합니다."}, status_code=400)
             team.max_members = new_max
         db_session.add(team)
         db_session.commit()
@@ -1277,65 +1323,65 @@ def update_team(team_id):
     return {"success": True, "name": saved_name}
 
 
-@app.route('/api/teams/<int:team_id>/members/<int:member_id>', methods=['DELETE'])
-def kick_member(team_id, member_id):
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
+@app.delete('/api/teams/{team_id}/members/{member_id}')
+def kick_member(team_id: int, member_id: int, request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
     with Session(engine) as db_session:
         team = db_session.get(Team, team_id)
-        if not team or team.leader_id != session['user_id']:
-            return {"error": "권한이 없습니다."}, 403
+        if not team or team.leader_id != request.session['user_id']:
+            return JSONResponse({"error": "권한이 없습니다."}, status_code=403)
         member = db_session.get(TeamMember, member_id)
         if not member or member.team_id != team_id:
-            return {"error": "멤버를 찾을 수 없습니다."}, 404
+            return JSONResponse({"error": "멤버를 찾을 수 없습니다."}, status_code=404)
         db_session.delete(member)
         db_session.commit()
     return {"success": True}
 
 
-@app.route('/api/teams/<int:team_id>/leave', methods=['POST'])
-def leave_team(team_id):
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    uid = session['user_id']
+@app.post('/api/teams/{team_id}/leave')
+def leave_team(team_id: int, request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    uid = request.session['user_id']
     with Session(engine) as db_session:
         team = db_session.get(Team, team_id)
         if not team:
-            return {"error": "팀을 찾을 수 없습니다."}, 404
+            return JSONResponse({"error": "팀을 찾을 수 없습니다."}, status_code=404)
         if team.leader_id == uid:
-            return {"error": "팀장은 팀을 나갈 수 없습니다. 팀 삭제를 이용해주세요."}, 400
+            return JSONResponse({"error": "팀장은 팀을 나갈 수 없습니다. 팀 삭제를 이용해주세요."}, status_code=400)
         member = db_session.exec(
             select(TeamMember).where(TeamMember.team_id == team_id, TeamMember.user_id == uid)
         ).first()
         if not member:
-            return {"error": "팀에 참여 중이 아닙니다."}, 404
+            return JSONResponse({"error": "팀에 참여 중이 아닙니다."}, status_code=404)
         db_session.delete(member)
         db_session.commit()
     return {"success": True}
 
 
-@app.route('/api/teams/<int:team_id>/join', methods=['POST'])
-def join_team(team_id):
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    current_user = session['user_id']
-    nickname = session.get('nickname', current_user)
+@app.post('/api/teams/{team_id}/join')
+def join_team(team_id: int, request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    current_user = request.session['user_id']
+    nickname = request.session.get('nickname', current_user)
     with Session(engine) as db_session:
         team = db_session.get(Team, team_id)
         if not team:
-            return {"error": "팀을 찾을 수 없습니다."}, 404
+            return JSONResponse({"error": "팀을 찾을 수 없습니다."}, status_code=404)
         if team.leader_id == current_user:
-            return {"error": "본인 팀에는 신청할 수 없습니다."}, 400
+            return JSONResponse({"error": "본인 팀에는 신청할 수 없습니다."}, status_code=400)
         existing = db_session.exec(
             select(TeamMember).where(TeamMember.team_id == team_id, TeamMember.user_id == current_user)
         ).first()
         if existing:
-            return {"error": "이미 신청했습니다."}, 400
+            return JSONResponse({"error": "이미 신청했습니다."}, status_code=400)
         accepted_count = len(db_session.exec(
             select(TeamMember).where(TeamMember.team_id == team_id, TeamMember.status == 'accepted')
         ).all())
         if accepted_count >= team.max_members:
-            return {"error": "팀 정원이 꽉 찼습니다."}, 400
+            return JSONResponse({"error": "팀 정원이 꽉 찼습니다."}, status_code=400)
         member = TeamMember(team_id=team_id, user_id=current_user,
                             display_name=nickname, status='pending',
                             joined_at=time.time())
@@ -1344,49 +1390,50 @@ def join_team(team_id):
     return {"success": True}
 
 
-@app.route('/api/teams/<int:team_id>/respond', methods=['POST'])
-def respond_team(team_id):
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    current_user = session['user_id']
+@app.post('/api/teams/{team_id}/respond')
+async def respond_team(team_id: int, request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    current_user = request.session['user_id']
+    form = await request.form()
     with Session(engine) as db_session:
         team = db_session.get(Team, team_id)
         if not team or team.leader_id != current_user:
-            return {"error": "권한이 없습니다."}, 403
-        member_id = int(request.form.get('member_id', 0))
-        action = request.form.get('action', '')  # 'accept' | 'reject'
+            return JSONResponse({"error": "권한이 없습니다."}, status_code=403)
+        member_id = int(form.get('member_id', 0))
+        action = str(form.get('action', ''))  # 'accept' | 'reject'
         member = db_session.get(TeamMember, member_id)
         if not member or member.team_id != team_id:
-            return {"error": "멤버를 찾을 수 없습니다."}, 404
+            return JSONResponse({"error": "멤버를 찾을 수 없습니다."}, status_code=404)
         if action == 'accept':
             accepted_count = len(db_session.exec(
                 select(TeamMember).where(TeamMember.team_id == team_id, TeamMember.status == 'accepted')
             ).all())
             if accepted_count >= team.max_members:
-                return {"error": "팀 정원이 꽉 찼습니다."}, 400
+                return JSONResponse({"error": "팀 정원이 꽉 찼습니다."}, status_code=400)
             member.status = 'accepted'
         elif action == 'reject':
             member.status = 'rejected'
         else:
-            return {"error": "잘못된 액션입니다."}, 400
+            return JSONResponse({"error": "잘못된 액션입니다."}, status_code=400)
         db_session.add(member)
         db_session.commit()
     return {"success": True}
 
 
-# ───────────── 구인하기 (관심 표현) ─────────────
-@app.route('/api/profiles/<int:profile_id>/interest', methods=['POST'])
-def recruit_interest(profile_id):
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    current_user = session['user_id']
-    nickname = session.get('nickname', current_user)
+# ─────────────── 구인하기 (관심 표현) ───────────────
+@app.post('/api/profiles/{profile_id}/interest')
+def recruit_interest(profile_id: int, request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    current_user = request.session['user_id']
+    nickname = request.session.get('nickname', current_user)
     with Session(engine) as db_session:
         profile = db_session.get(Profile, profile_id)
         if not profile:
-            return {"error": "프로필을 찾을 수 없습니다."}, 404
+            return JSONResponse({"error": "프로필을 찾을 수 없습니다."}, status_code=404)
         if profile.user_id == current_user:
-            return {"error": "본인 게시글에는 구인할 수 없습니다."}, 400
+            return JSONResponse({"error": "본인 게시글에는 구인할 수 없습니다."}, status_code=400)
         existing = db_session.exec(
             select(RecruitInterest).where(
                 RecruitInterest.profile_id == profile_id,
@@ -1394,7 +1441,7 @@ def recruit_interest(profile_id):
             )
         ).first()
         if existing:
-            return {"error": "이미 구인 신청을 보냈습니다."}, 400
+            return JSONResponse({"error": "이미 구인 신청을 보냈습니다."}, status_code=400)
         interest = RecruitInterest(
             profile_id=profile_id,
             sender_id=current_user,
@@ -1402,11 +1449,10 @@ def recruit_interest(profile_id):
         )
         db_session.add(interest)
         try:
-            db_session.commit()  # 구인 신청 먼저 저장
-        except Exception as e:
+            db_session.commit()
+        except Exception:
             db_session.rollback()
-            return {"error": "신청 처리 중 오류가 발생했습니다."}, 500
-        # 알림 저장 (실패해도 신청은 유지)
+            return JSONResponse({"error": "신청 처리 중 오류가 발생했습니다."}, status_code=500)
         try:
             notif = Notification(
                 user_id=profile.user_id,
@@ -1425,12 +1471,12 @@ def recruit_interest(profile_id):
     return {"success": True}
 
 
-# ───────────── 알림 ─────────────
-@app.route('/api/notifications', methods=['GET'])
-def get_notifications():
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    current_user = session['user_id']
+# ─────────────── 알림 ───────────────
+@app.get('/api/notifications')
+def get_notifications(request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    current_user = request.session['user_id']
     with Session(engine) as db_session:
         notifs = db_session.exec(
             select(Notification)
@@ -1454,17 +1500,16 @@ def get_notifications():
     }
 
 
-@app.route('/api/profiles/<int:profile_id>/view', methods=['POST'])
-def view_profile(profile_id):
-    if 'user_id' not in session:
-        return {"success": False}, 401
-    current_user = session['user_id']
-    nickname = session.get('nickname', current_user)
+@app.post('/api/profiles/{profile_id}/view')
+def view_profile(profile_id: int, request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"success": False}, status_code=401)
+    current_user = request.session['user_id']
+    nickname = request.session.get('nickname', current_user)
     with Session(engine) as db_session:
         profile = db_session.get(Profile, profile_id)
         if not profile or profile.user_id == current_user:
             return {"success": False}
-        # 이미 같은 사람이 같은 프로필에 view 알림을 보낸 경우 중복 방지
         existing = db_session.exec(
             select(Notification).where(
                 Notification.user_id == profile.user_id,
@@ -1490,12 +1535,12 @@ def view_profile(profile_id):
     return {"success": True}
 
 
-# ───────────── DM ─────────────
-@app.route('/api/dm/unread', methods=['GET'])
-def dm_unread():
-    if 'user_id' not in session:
+# ─────────────── DM ───────────────
+@app.get('/api/dm/unread')
+def dm_unread(request: Request):
+    if 'user_id' not in request.session:
         return {"unread": 0}
-    current_user = session['user_id']
+    current_user = request.session['user_id']
     with Session(engine) as db_session:
         count = len(db_session.exec(
             select(DirectMessage).where(
@@ -1506,11 +1551,11 @@ def dm_unread():
     return {"unread": count}
 
 
-@app.route('/api/dm/conversations', methods=['GET'])
-def dm_conversations():
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    current_user = session['user_id']
+@app.get('/api/dm/conversations')
+def dm_conversations(request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    current_user = request.session['user_id']
     with Session(engine) as db_session:
         messages = db_session.exec(
             select(DirectMessage).where(
@@ -1537,11 +1582,11 @@ def dm_conversations():
     return {"conversations": convs}
 
 
-@app.route('/api/dm/<other_user_id>', methods=['GET'])
-def get_dm(other_user_id):
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    current_user = session['user_id']
+@app.get('/api/dm/{other_user_id}')
+def get_dm(other_user_id: str, request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    current_user = request.session['user_id']
     with Session(engine) as db_session:
         messages = db_session.exec(
             select(DirectMessage).where(
@@ -1572,18 +1617,19 @@ def get_dm(other_user_id):
     return {"messages": messages_data, "other_nickname": other_nickname}
 
 
-@app.route('/api/dm/<other_user_id>', methods=['POST'])
-def send_dm(other_user_id):
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    current_user = session['user_id']
-    message_text = request.form.get('message', '').strip()
+@app.post('/api/dm/{other_user_id}')
+async def send_dm(other_user_id: str, request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    current_user = request.session['user_id']
+    form = await request.form()
+    message_text = str(form.get('message', '')).strip()
     if not message_text:
-        return {"error": "메시지를 입력해주세요."}, 400
+        return JSONResponse({"error": "메시지를 입력해주세요."}, status_code=400)
     with Session(engine) as db_session:
         other_user = db_session.exec(select(User).where(User.username == other_user_id)).first()
         if not other_user:
-            return {"error": "사용자를 찾을 수 없습니다."}, 404
+            return JSONResponse({"error": "사용자를 찾을 수 없습니다."}, status_code=404)
         dm = DirectMessage(
             sender_id=current_user,
             receiver_id=other_user_id,
@@ -1599,11 +1645,11 @@ def send_dm(other_user_id):
     }}
 
 
-@app.route('/api/notifications/read-all', methods=['POST'])
-def read_all_notifications():
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    current_user = session['user_id']
+@app.post('/api/notifications/read-all')
+def read_all_notifications(request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    current_user = request.session['user_id']
     with Session(engine) as db_session:
         notifs = db_session.exec(
             select(Notification).where(
@@ -1618,26 +1664,27 @@ def read_all_notifications():
     return {"success": True}
 
 
-@app.route('/api/profiles/<int:profile_id>', methods=['PUT'])
-def update_profile(profile_id):
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    current_user = session['user_id']
+@app.put('/api/profiles/{profile_id}')
+async def update_profile(profile_id: int, request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    current_user = request.session['user_id']
+    form = await request.form()
     with Session(engine) as db_session:
         profile = db_session.get(Profile, profile_id)
         if not profile:
-            return {"error": "프로필을 찾을 수 없습니다."}, 404
+            return JSONResponse({"error": "프로필을 찾을 수 없습니다."}, status_code=404)
         if profile.user_id != current_user:
-            return {"error": "권한이 없습니다."}, 403
-        name = session.get('nickname', current_user)
-        class_number = request.form.get('class_number', '').strip()
-        major = request.form.get('major', '').strip()
-        bio = request.form.get('bio', '').strip()
-        past_languages = request.form.get('past_languages', '').strip()
-        current_languages = request.form.get('current_languages', '').strip()
-        profile_image = request.form.get('profile_image', '').strip()
+            return JSONResponse({"error": "권한이 없습니다."}, status_code=403)
+        name = request.session.get('nickname', current_user)
+        class_number = str(form.get('class_number', '')).strip()
+        major = str(form.get('major', '')).strip()
+        bio = str(form.get('bio', '')).strip()
+        past_languages = str(form.get('past_languages', '')).strip()
+        current_languages = str(form.get('current_languages', '')).strip()
+        profile_image = str(form.get('profile_image', '')).strip()
         if not class_number or not major:
-            return {"error": "반/번호, 전공은 필수입니다."}, 400
+            return JSONResponse({"error": "반/번호, 전공은 필수입니다."}, status_code=400)
         profile.name = name
         profile.class_number = class_number
         profile.major = major
@@ -1651,32 +1698,31 @@ def update_profile(profile_id):
     return {"success": True}
 
 
-@app.route('/api/profiles/<int:profile_id>', methods=['DELETE'])
-def delete_profile(profile_id):
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    current_user = session['user_id']
+@app.delete('/api/profiles/{profile_id}')
+def delete_profile(profile_id: int, request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    current_user = request.session['user_id']
     with Session(engine) as db_session:
         profile = db_session.get(Profile, profile_id)
         if not profile:
-            return {"error": "프로필을 찾을 수 없습니다."}, 404
+            return JSONResponse({"error": "프로필을 찾을 수 없습니다."}, status_code=404)
         if profile.user_id != current_user:
-            return {"error": "권한이 없습니다."}, 403
+            return JSONResponse({"error": "권한이 없습니다."}, status_code=403)
         db_session.delete(profile)
         db_session.commit()
     return {"success": True}
 
 
-@app.route('/api/teams/<int:team_id>/messages', methods=['GET'])
-def get_group_messages(team_id):
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    current_user = session['user_id']
+@app.get('/api/teams/{team_id}/messages')
+def get_group_messages(team_id: int, request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    current_user = request.session['user_id']
     with Session(engine) as db_session:
         team = db_session.get(Team, team_id)
         if not team:
-            return {"error": "팀을 찾을 수 없습니다."}, 404
-        # 팀 멤버 확인
+            return JSONResponse({"error": "팀을 찾을 수 없습니다."}, status_code=404)
         member = db_session.exec(
             select(TeamMember).where(
                 TeamMember.team_id == team_id,
@@ -1686,7 +1732,7 @@ def get_group_messages(team_id):
         ).first()
         is_leader = team.leader_id == current_user
         if not member and not is_leader:
-            return {"error": "팀 멤버만 볼 수 있습니다."}, 403
+            return JSONResponse({"error": "팀 멤버만 볼 수 있습니다."}, status_code=403)
         messages = db_session.exec(
             select(GroupMessage).where(GroupMessage.team_id == team_id)
             .order_by(GroupMessage.created_at)
@@ -1698,7 +1744,6 @@ def get_group_messages(team_id):
             )
         ).all()
         members_data = [{"user_id": m.user_id, "display_name": m.display_name} for m in members]
-        # 팀장 추가
         leader_user = db_session.exec(select(User).where(User.username == team.leader_id)).first()
         leader_name = leader_user.nickname if leader_user and leader_user.nickname else team.leader_name
         members_data.insert(0, {"user_id": team.leader_id, "display_name": leader_name + " 👑"})
@@ -1718,18 +1763,19 @@ def get_group_messages(team_id):
     }
 
 
-@app.route('/api/teams/<int:team_id>/messages', methods=['POST'])
-def send_group_message(team_id):
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    current_user = session['user_id']
-    message_text = request.form.get('message', '').strip()
+@app.post('/api/teams/{team_id}/messages')
+async def send_group_message(team_id: int, request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    current_user = request.session['user_id']
+    form = await request.form()
+    message_text = str(form.get('message', '')).strip()
     if not message_text:
-        return {"error": "메시지를 입력해주세요."}, 400
+        return JSONResponse({"error": "메시지를 입력해주세요."}, status_code=400)
     with Session(engine) as db_session:
         team = db_session.get(Team, team_id)
         if not team:
-            return {"error": "팀을 찾을 수 없습니다."}, 404
+            return JSONResponse({"error": "팀을 찾을 수 없습니다."}, status_code=404)
         member = db_session.exec(
             select(TeamMember).where(
                 TeamMember.team_id == team_id,
@@ -1739,7 +1785,7 @@ def send_group_message(team_id):
         ).first()
         is_leader = team.leader_id == current_user
         if not member and not is_leader:
-            return {"error": "팀 멤버만 메시지를 보낼 수 있습니다."}, 403
+            return JSONResponse({"error": "팀 멤버만 메시지를 보낼 수 있습니다."}, status_code=403)
         user = db_session.exec(select(User).where(User.username == current_user)).first()
         nickname = user.nickname if user and user.nickname else current_user
         msg = GroupMessage(
@@ -1759,27 +1805,27 @@ def send_group_message(team_id):
     }}
 
 
-# ───────────── 쇼케이스 ─────────────
+# ─────────────── 쇼케이스 ───────────────
+@app.get('/showcase')
+def showcase_page(request: Request):
+    if 'user_id' not in request.session:
+        return RedirectResponse('/login_page', status_code=302)
+    current_user = request.session['user_id']
+    nickname = request.session.get('nickname', current_user)
+    return templates.TemplateResponse('showcase.html', {
+        'request': request,
+        'user_id': nickname,
+        'raw_user_id': current_user,
+        'is_admin': check_admin(request.session),
+    })
 
-@app.route('/showcase')
-def showcase_page():
-    if 'user_id' not in session:
-        return redirect(url_for('login_page'))
-    current_user = session['user_id']
-    nickname = session.get('nickname', current_user)
-    return render_template('showcase.html',
-        user_id=nickname,
-        raw_user_id=current_user,
-        is_admin=check_admin()
-    )
 
-
-@app.route('/api/showcase', methods=['GET'])
-def showcase_list():
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    current_user = session['user_id']
-    category = request.args.get('category', '')
+@app.get('/api/showcase')
+def showcase_list(request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    current_user = request.session['user_id']
+    category = request.query_params.get('category', '')
     try:
         with Session(engine) as db_session:
             q = select(ShowcaseProject).order_by(ShowcaseProject.created_at.desc())
@@ -1810,27 +1856,28 @@ def showcase_list():
                 })
         return {"projects": result}
     except Exception:
-        return {"error": "불러오는 중 오류가 발생했습니다.", "projects": []}, 500
+        return JSONResponse({"error": "불러오는 중 오류가 발생했습니다.", "projects": []}, status_code=500)
 
 
-@app.route('/api/showcase', methods=['POST'])
-def showcase_create():
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    current_user = session['user_id']
-    nickname = session.get('nickname', current_user)
-    title = request.form.get('title', '').strip()
-    description = request.form.get('description', '').strip()
-    url = request.form.get('url', '').strip()
-    thumbnail = request.form.get('thumbnail', '').strip() or None
-    tech_stack = request.form.get('tech_stack', '').strip()
-    category = request.form.get('category', '기타').strip()
+@app.post('/api/showcase')
+async def showcase_create(request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    current_user = request.session['user_id']
+    nickname = request.session.get('nickname', current_user)
+    form = await request.form()
+    title = str(form.get('title', '')).strip()
+    description = str(form.get('description', '')).strip()
+    url = str(form.get('url', '')).strip()
+    thumbnail = str(form.get('thumbnail', '')).strip() or None
+    tech_stack = str(form.get('tech_stack', '')).strip()
+    category = str(form.get('category', '기타')).strip()
     if not title:
-        return {"error": "제목을 입력해주세요."}, 400
+        return JSONResponse({"error": "제목을 입력해주세요."}, status_code=400)
     if len(title) > 50:
-        return {"error": "제목은 50자 이내여야 합니다."}, 400
+        return JSONResponse({"error": "제목은 50자 이내여야 합니다."}, status_code=400)
     if len(description) > 500:
-        return {"error": "설명은 500자 이내여야 합니다."}, 400
+        return JSONResponse({"error": "설명은 500자 이내여야 합니다."}, status_code=400)
     try:
         with Session(engine) as db_session:
             project = ShowcaseProject(
@@ -1844,67 +1891,68 @@ def showcase_create():
             db_session.refresh(project)
             return {"success": True, "id": project.id}
     except Exception:
-        return {"error": "등록 중 오류가 발생했습니다."}, 500
+        return JSONResponse({"error": "등록 중 오류가 발생했습니다."}, status_code=500)
 
 
-@app.route('/api/showcase/<int:project_id>', methods=['PUT'])
-def showcase_update(project_id):
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    current_user = session['user_id']
+@app.put('/api/showcase/{project_id}')
+async def showcase_update(project_id: int, request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    current_user = request.session['user_id']
+    form = await request.form()
     try:
         with Session(engine) as db_session:
             p = db_session.get(ShowcaseProject, project_id)
             if not p:
-                return {"error": "존재하지 않는 프로젝트입니다."}, 404
-            if p.user_id != current_user and not check_admin():
-                return {"error": "권한이 없습니다."}, 403
-            title = request.form.get('title', '').strip()
+                return JSONResponse({"error": "존재하지 않는 프로젝트입니다."}, status_code=404)
+            if p.user_id != current_user and not check_admin(request.session):
+                return JSONResponse({"error": "권한이 없습니다."}, status_code=403)
+            title = str(form.get('title', '')).strip()
             if not title:
-                return {"error": "제목을 입력해주세요."}, 400
+                return JSONResponse({"error": "제목을 입력해주세요."}, status_code=400)
             p.title = title
-            p.description = request.form.get('description', '').strip()
-            p.url = request.form.get('url', '').strip()
-            p.tech_stack = request.form.get('tech_stack', '').strip()
-            p.category = request.form.get('category', '기타').strip()
-            thumbnail = request.form.get('thumbnail', '').strip()
+            p.description = str(form.get('description', '')).strip()
+            p.url = str(form.get('url', '')).strip()
+            p.tech_stack = str(form.get('tech_stack', '')).strip()
+            p.category = str(form.get('category', '기타')).strip()
+            thumbnail = str(form.get('thumbnail', '')).strip()
             if thumbnail:
                 p.thumbnail = thumbnail
-            elif request.form.get('thumbnail_removed') == '1':
+            elif str(form.get('thumbnail_removed', '')) == '1':
                 p.thumbnail = None
             db_session.add(p)
             db_session.commit()
             return {"success": True}
     except Exception:
-        return {"error": "수정 중 오류가 발생했습니다."}, 500
+        return JSONResponse({"error": "수정 중 오류가 발생했습니다."}, status_code=500)
 
 
-@app.route('/api/showcase/<int:project_id>', methods=['DELETE'])
-def showcase_delete(project_id):
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    current_user = session['user_id']
+@app.delete('/api/showcase/{project_id}')
+def showcase_delete(project_id: int, request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    current_user = request.session['user_id']
     try:
         with Session(engine) as db_session:
             p = db_session.get(ShowcaseProject, project_id)
             if not p:
-                return {"error": "존재하지 않는 프로젝트입니다."}, 404
-            if p.user_id != current_user and not check_admin():
-                return {"error": "권한이 없습니다."}, 403
+                return JSONResponse({"error": "존재하지 않는 프로젝트입니다."}, status_code=404)
+            if p.user_id != current_user and not check_admin(request.session):
+                return JSONResponse({"error": "권한이 없습니다."}, status_code=403)
             db_session.exec(text(f"DELETE FROM showcaselike WHERE project_id = {project_id}"))
             db_session.exec(text(f"DELETE FROM showcasecomment WHERE project_id = {project_id}"))
             db_session.delete(p)
             db_session.commit()
             return {"success": True}
     except Exception:
-        return {"error": "삭제 중 오류가 발생했습니다."}, 500
+        return JSONResponse({"error": "삭제 중 오류가 발생했습니다."}, status_code=500)
 
 
-@app.route('/api/showcase/<int:project_id>/like', methods=['POST'])
-def showcase_like(project_id):
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    current_user = session['user_id']
+@app.post('/api/showcase/{project_id}/like')
+def showcase_like(project_id: int, request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    current_user = request.session['user_id']
     with Session(engine) as db_session:
         existing = db_session.exec(
             select(ShowcaseLike).where(ShowcaseLike.project_id == project_id, ShowcaseLike.user_id == current_user)
@@ -1922,10 +1970,10 @@ def showcase_like(project_id):
         return {"success": True, "liked": liked, "count": count}
 
 
-@app.route('/api/showcase/<int:project_id>/view', methods=['POST'])
-def showcase_view(project_id):
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
+@app.post('/api/showcase/{project_id}/view')
+def showcase_view(project_id: int, request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
     with Session(engine) as db_session:
         p = db_session.get(ShowcaseProject, project_id)
         if p:
@@ -1935,11 +1983,11 @@ def showcase_view(project_id):
     return {"success": True}
 
 
-@app.route('/api/showcase/<int:project_id>/comments', methods=['GET'])
-def showcase_get_comments(project_id):
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    current_user = session['user_id']
+@app.get('/api/showcase/{project_id}/comments')
+def showcase_get_comments(project_id: int, request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    current_user = request.session['user_id']
     with Session(engine) as db_session:
         comments = db_session.exec(
             select(ShowcaseComment).where(ShowcaseComment.project_id == project_id)
@@ -1953,17 +2001,18 @@ def showcase_get_comments(project_id):
         ]}
 
 
-@app.route('/api/showcase/<int:project_id>/comments', methods=['POST'])
-def showcase_add_comment(project_id):
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    current_user = session['user_id']
-    nickname = session.get('nickname', current_user)
-    content = request.form.get('content', '').strip()
+@app.post('/api/showcase/{project_id}/comments')
+async def showcase_add_comment(project_id: int, request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    current_user = request.session['user_id']
+    nickname = request.session.get('nickname', current_user)
+    form = await request.form()
+    content = str(form.get('content', '')).strip()
     if not content:
-        return {"error": "내용을 입력해주세요."}, 400
+        return JSONResponse({"error": "내용을 입력해주세요."}, status_code=400)
     if len(content) > 300:
-        return {"error": "댓글은 300자 이내여야 합니다."}, 400
+        return JSONResponse({"error": "댓글은 300자 이내여야 합니다."}, status_code=400)
     with Session(engine) as db_session:
         c = ShowcaseComment(
             project_id=project_id, author_id=current_user,
@@ -1978,22 +2027,34 @@ def showcase_add_comment(project_id):
         }}
 
 
-@app.route('/api/showcase/<int:project_id>/comments/<int:comment_id>', methods=['DELETE'])
-def showcase_delete_comment(project_id, comment_id):
-    if 'user_id' not in session:
-        return {"error": "Unauthorized"}, 401
-    current_user = session['user_id']
+@app.delete('/api/showcase/{project_id}/comments/{comment_id}')
+def showcase_delete_comment(project_id: int, comment_id: int, request: Request):
+    if 'user_id' not in request.session:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+    current_user = request.session['user_id']
     with Session(engine) as db_session:
         c = db_session.get(ShowcaseComment, comment_id)
         if not c or c.project_id != project_id:
-            return {"error": "존재하지 않는 댓글입니다."}, 404
-        if c.author_id != current_user and not check_admin():
-            return {"error": "권한이 없습니다."}, 403
+            return JSONResponse({"error": "존재하지 않는 댓글입니다."}, status_code=404)
+        if c.author_id != current_user and not check_admin(request.session):
+            return JSONResponse({"error": "권한이 없습니다."}, status_code=403)
         db_session.delete(c)
         db_session.commit()
         return {"success": True}
 
 
+# ─────────────── 미들웨어 등록 (SessionMiddleware는 마지막에 추가 → 가장 바깥쪽에서 실행) ───────────────
+# enforce_lock(@app.middleware)이 먼저 등록된 뒤 SessionMiddleware가 그 위를 감싸야
+# request.session이 enforce_lock 안에서 정상 동작함
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.environ.get('SECRET_KEY', 'dev-secret-key'),
+    same_site='lax',
+    https_only=False,
+    max_age=604800,  # 7일
+)
+
 if __name__ == '__main__':
+    import uvicorn
     port = int(os.environ.get('PORT', 4500))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    uvicorn.run(app, host='0.0.0.0', port=port)
