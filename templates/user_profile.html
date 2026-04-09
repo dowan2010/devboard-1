@@ -6,7 +6,6 @@
     <script>if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');</script>
     <link rel="stylesheet" href="/static/css/main.css">
     <link rel="stylesheet" href="/static/css/notif.css">
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <title>{{ target_nickname }}님의 프로필</title>
     <style>
         .profile-page { max-width: 720px; margin: 100px auto 60px; padding: 0 20px; }
@@ -352,6 +351,7 @@ setInterval(async () => {
     if (res.status === 401 || res.status === 403) location.href = '/login';
 }, 30000);
 </script>
+<script src="/static/js/lucide.min.js"></script>
 <script>lucide.createIcons();</script>
 </body>
 </html>

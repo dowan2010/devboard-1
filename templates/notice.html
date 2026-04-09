@@ -6,7 +6,6 @@
     <link rel="stylesheet" href="/static/css/main.css">
     <link rel="stylesheet" href="/static/css/notice.css">
     <link rel="stylesheet" href="/static/css/notif.css">
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <title>공지사항</title>
 </head>
 <body>
@@ -304,6 +303,7 @@ setInterval(async () => {
     if (res.status === 401 || res.status === 403) location.href = '/login';
 }, 30000);
 </script>
+<script src="/static/js/lucide.min.js"></script>
 <script>lucide.createIcons();</script>
 </body>
 </html>

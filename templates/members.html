@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/static/css/recruit.css">
     <link rel="stylesheet" href="/static/css/notif.css">
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <title>멤버 보기 · DevBoard</title>
     <script>if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark-early');</script>
     <style>.dark-early body,.dark-early{background-color:#1a1a2e!important;}</style>
@@ -215,6 +214,7 @@ setInterval(async () => {
     if (res.status === 401 || res.status === 403) location.href = '/login';
 }, 30000);
 </script>
+<script src="/static/js/lucide.min.js"></script>
 <script>lucide.createIcons();</script>
 </body>
 </html>

@@ -657,6 +657,8 @@ body.dark .footer {
     margin-top: 28px;
     position: relative;
     z-index: 1;
+    /* CLS 방지: 데이터 로드 전후 높이 고정 */
+    min-height: 280px;
 }
 
 .home-card {
@@ -706,6 +708,11 @@ body.dark .footer {
     font-size: 42px;
     font-weight: 900;
     color: #5b5ef7;
+    min-width: 60px;
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 body.dark .home-card {

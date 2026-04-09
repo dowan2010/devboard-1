@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/static/css/recruit.css">
     <link rel="stylesheet" href="/static/css/notif.css">
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <title>구인·구직·팀 게시판</title>
     <!-- 다크모드 번쩍임 방지: 스타일 로드 직후 즉시 적용 -->
     <script>if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark-early');</script>
@@ -265,6 +264,7 @@ setInterval(async () => {
     if (res.status === 401 || res.status === 403) location.href = '/login';
 }, 30000);
 </script>
+<script src="/static/js/lucide.min.js"></script>
 <script>lucide.createIcons();</script>
 </body>
 </html>

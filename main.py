@@ -292,6 +292,26 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 # ─────────────── 미들웨어 ───────────────
 # Pure ASGI middleware (BaseHTTPMiddleware 대신 사용 — Starlette 1.0.0에서 세션 접근 순서 문제 방지)
+class StaticCacheMiddleware:
+    """정적 파일에 Cache-Control 헤더 추가 (1년 캐시)"""
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http" or not scope.get("path", "").startswith("/static"):
+            await self.app(scope, receive, send)
+            return
+
+        async def send_with_cache(message):
+            if message["type"] == "http.response.start":
+                headers = list(message.get("headers", []))
+                headers.append((b"cache-control", b"public, max-age=31536000, immutable"))
+                message = {**message, "headers": headers}
+            await send(message)
+
+        await self.app(scope, receive, send_with_cache)
+
+
 class EnforceLockMiddleware:
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
@@ -323,6 +343,7 @@ class EnforceLockMiddleware:
 # 미들웨어 등록 순서: add_middleware는 LIFO(후입선출)로 스택에 쌓임
 # → 마지막에 추가한 것이 가장 바깥(outermost)에서 실행
 # SessionMiddleware를 마지막에 추가 → 가장 먼저 실행 → scope["session"] 세팅 후 EnforceLock 실행
+app.add_middleware(StaticCacheMiddleware)
 app.add_middleware(EnforceLockMiddleware)
 app.add_middleware(
     SessionMiddleware,
@@ -1022,10 +1043,8 @@ def api_stats(request: Request):
 @app.get('/api/new-activity')
 def new_activity(request: Request):
     with Session(engine) as db_session:
-        profiles = db_session.exec(select(Profile)).all()
-        notices  = db_session.exec(select(Notice)).all()
-    profile_latest = max((p.created_at for p in profiles), default=0)
-    notice_latest  = max((n.created_at for n in notices),  default=0)
+        profile_latest = db_session.exec(select(func.max(Profile.created_at))).one() or 0
+        notice_latest  = db_session.exec(select(func.max(Notice.created_at))).one() or 0
     return {"profile_latest": profile_latest, "notice_latest": notice_latest}
 
 
