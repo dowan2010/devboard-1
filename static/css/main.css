@@ -9,11 +9,7 @@ a { text-decoration: none; }
 .hidden { display: none !important; }
 
 body {
-    background:
-        radial-gradient(ellipse 80% 60% at 15% 20%, rgba(255, 150, 220, 0.7) 0%, transparent 65%),
-        radial-gradient(ellipse 60% 50% at 85% 15%, rgba(150, 175, 255, 0.7) 0%, transparent 65%),
-        linear-gradient(150deg, #e8aaf0 0%, #c8b0f8 40%, #a8c4f8 100%);
-    background-attachment: fixed;
+    background: #ffffff;
     min-height: 100vh;
     font-family: sans-serif;
 }
