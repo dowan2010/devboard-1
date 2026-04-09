@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.types import ASGIApp, Receive, Scope, Send
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 from sqlalchemy import text, or_, and_, func
 from authlib.integrations.starlette_client import OAuth
@@ -282,24 +283,54 @@ async def global_exception_handler(request: Request, exc: Exception):
     tb = traceback.format_exc()
     print(f"[ERROR] {request.method} {request.url.path} → {type(exc).__name__}: {exc}")
     print(tb)
-    return JSONResponse({"detail": f"{type(exc).__name__}: {exc}"}, status_code=500)
+    # 디버그용: traceback 전체를 응답에 포함 (원인 파악 후 제거 예정)
+    return JSONResponse({
+        "error": f"{type(exc).__name__}: {exc}",
+        "where": tb.strip().splitlines()[-5:]
+    }, status_code=500)
 
 
 # ─────────────── 미들웨어 ───────────────
-@app.middleware("http")
-async def enforce_lock(request: Request, call_next):
-    if request.url.path.startswith('/static'):
-        return await call_next(request)
-    uid = request.session.get('user_id')
-    if uid:
-        with Session(engine) as db_session:
-            user = db_session.exec(select(User).where(User.username == uid)).first()
-            if user and user.locked_until and time.time() < user.locked_until:
-                request.session.clear()
-                if request.url.path.startswith('/api/'):
-                    return JSONResponse({"error": "계정이 잠금 상태입니다."}, status_code=403)
-                return RedirectResponse(url='/login_page', status_code=302)
-    return await call_next(request)
+# Pure ASGI middleware (BaseHTTPMiddleware 대신 사용 — Starlette 1.0.0에서 세션 접근 순서 문제 방지)
+class EnforceLockMiddleware:
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        path = scope.get("path", "")
+        if path.startswith("/static"):
+            await self.app(scope, receive, send)
+            return
+        session = scope.get("session", {})
+        uid = session.get("user_id")
+        if uid:
+            with Session(engine) as db_session:
+                user = db_session.exec(select(User).where(User.username == uid)).first()
+                if user and user.locked_until and time.time() < user.locked_until:
+                    session.clear()
+                    if path.startswith("/api/"):
+                        response = JSONResponse({"error": "계정이 잠금 상태입니다."}, status_code=403)
+                    else:
+                        response = RedirectResponse("/login_page", status_code=302)
+                    await response(scope, receive, send)
+                    return
+        await self.app(scope, receive, send)
+
+
+# 미들웨어 등록 순서: add_middleware는 LIFO(후입선출)로 스택에 쌓임
+# → 마지막에 추가한 것이 가장 바깥(outermost)에서 실행
+# SessionMiddleware를 마지막에 추가 → 가장 먼저 실행 → scope["session"] 세팅 후 EnforceLock 실행
+app.add_middleware(EnforceLockMiddleware)
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.environ.get('SECRET_KEY', 'dev-secret-key'),
+    same_site='lax',
+    https_only=False,
+    max_age=604800,
+)
 
 
 # ─────────────── 기본 라우트 ───────────────
@@ -2060,17 +2091,6 @@ def showcase_delete_comment(project_id: int, comment_id: int, request: Request):
         db_session.commit()
         return {"success": True}
 
-
-# ─────────────── 미들웨어 등록 (SessionMiddleware는 마지막에 추가 → 가장 바깥쪽에서 실행) ───────────────
-# enforce_lock(@app.middleware)이 먼저 등록된 뒤 SessionMiddleware가 그 위를 감싸야
-# request.session이 enforce_lock 안에서 정상 동작함
-app.add_middleware(
-    SessionMiddleware,
-    secret_key=os.environ.get('SECRET_KEY', 'dev-secret-key'),
-    same_site='lax',
-    https_only=False,
-    max_age=604800,  # 7일
-)
 
 if __name__ == '__main__':
     import uvicorn
