@@ -18,8 +18,10 @@ load_dotenv()
 # ─────────────── 앱 설정 ───────────────
 app = FastAPI()
 
-templates = Jinja2Templates(directory="templates")
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# 절대 경로 사용 (Render 등 배포 환경에서 working directory 문제 방지)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
+app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 
 # ─────────────── Google OAuth ───────────────
 oauth = OAuth()
@@ -184,42 +186,44 @@ else:
         pool_recycle=300,
     )
 
-SQLModel.metadata.create_all(engine)
+try:
+    SQLModel.metadata.create_all(engine)
+except Exception as e:
+    print(f"[DB] create_all warning: {e}")
 
-with engine.connect() as conn:
+# PostgreSQL 은 "user" 가 예약어이므로 따옴표 필수
+# 각 SQL 을 독립된 커넥션으로 실행 → 한 SQL 실패가 다음 SQL 에 영향 없음
+_is_pg = "sqlite" not in DATABASE_URL
+
+def _run_migration(sql: str):
     try:
-        conn.execute(text("ALTER TABLE user ADD COLUMN nickname VARCHAR"))
-        conn.commit()
+        with engine.connect() as c:
+            c.execute(text(sql))
+            c.commit()
     except Exception:
         pass
-    for idx_name in ('ix_profile_user_id', 'uq_profile_user_id', 'profile_user_id'):
-        try:
-            conn.execute(text(f"DROP INDEX IF EXISTS {idx_name}"))
-            conn.commit()
-        except Exception:
-            pass
-    for col_sql in (
-        "ALTER TABLE profile ADD COLUMN post_type VARCHAR DEFAULT 'recruit'",
-        "ALTER TABLE profile ADD COLUMN dev_field VARCHAR",
-        "ALTER TABLE profile ADD COLUMN bio VARCHAR DEFAULT ''",
-        "ALTER TABLE notification ADD COLUMN notif_type VARCHAR DEFAULT 'interest'",
-        "ALTER TABLE user ADD COLUMN is_admin BOOLEAN DEFAULT 0",
-        "ALTER TABLE user ADD COLUMN is_superadmin BOOLEAN DEFAULT 0",
-        "ALTER TABLE user ADD COLUMN is_owner BOOLEAN DEFAULT 0",
-        "ALTER TABLE user ADD COLUMN google_id VARCHAR",
-        "CREATE TABLE IF NOT EXISTS noticecomment (id INTEGER PRIMARY KEY AUTOINCREMENT, notice_id INTEGER NOT NULL, author_id VARCHAR NOT NULL, author_nickname VARCHAR DEFAULT '', content VARCHAR DEFAULT '', created_at REAL DEFAULT 0.0)",
-        "ALTER TABLE team ADD COLUMN team_image TEXT DEFAULT NULL",
-        "ALTER TABLE user ADD COLUMN discord_id VARCHAR DEFAULT NULL",
-        "ALTER TABLE user ADD COLUMN github_id VARCHAR DEFAULT NULL",
-        "CREATE TABLE IF NOT EXISTS showcaseproject (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id VARCHAR NOT NULL, author_nickname VARCHAR DEFAULT '', title VARCHAR NOT NULL, description VARCHAR DEFAULT '', url VARCHAR DEFAULT '', thumbnail TEXT, tech_stack VARCHAR DEFAULT '', category VARCHAR DEFAULT '기타', views INTEGER DEFAULT 0, created_at REAL DEFAULT 0.0)",
-        "CREATE TABLE IF NOT EXISTS showcaselike (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL, user_id VARCHAR NOT NULL, created_at REAL DEFAULT 0.0)",
-        "CREATE TABLE IF NOT EXISTS showcasecomment (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id INTEGER NOT NULL, author_id VARCHAR NOT NULL, author_nickname VARCHAR DEFAULT '', content VARCHAR DEFAULT '', created_at REAL DEFAULT 0.0)",
-    ):
-        try:
-            conn.execute(text(col_sql))
-            conn.commit()
-        except Exception:
-            pass
+
+_run_migration('ALTER TABLE "user" ADD COLUMN nickname VARCHAR' if _is_pg else
+               'ALTER TABLE user ADD COLUMN nickname VARCHAR')
+
+for idx_name in ('ix_profile_user_id', 'uq_profile_user_id', 'profile_user_id'):
+    _run_migration(f"DROP INDEX IF EXISTS {idx_name}")
+
+_user = '"user"' if _is_pg else 'user'
+for col_sql in (
+    f"ALTER TABLE profile ADD COLUMN post_type VARCHAR DEFAULT 'recruit'",
+    f"ALTER TABLE profile ADD COLUMN dev_field VARCHAR",
+    f"ALTER TABLE profile ADD COLUMN bio VARCHAR DEFAULT ''",
+    f"ALTER TABLE notification ADD COLUMN notif_type VARCHAR DEFAULT 'interest'",
+    f"ALTER TABLE {_user} ADD COLUMN is_admin BOOLEAN DEFAULT false",
+    f"ALTER TABLE {_user} ADD COLUMN is_superadmin BOOLEAN DEFAULT false",
+    f"ALTER TABLE {_user} ADD COLUMN is_owner BOOLEAN DEFAULT false",
+    f"ALTER TABLE {_user} ADD COLUMN google_id VARCHAR",
+    f"ALTER TABLE team ADD COLUMN team_image TEXT DEFAULT NULL",
+    f"ALTER TABLE {_user} ADD COLUMN discord_id VARCHAR DEFAULT NULL",
+    f"ALTER TABLE {_user} ADD COLUMN github_id VARCHAR DEFAULT NULL",
+):
+    _run_migration(col_sql)
 
 
 # ─────────────── 캐시 ───────────────
