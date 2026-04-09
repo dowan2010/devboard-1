@@ -342,7 +342,7 @@ def index():
 @app.get('/login_page')
 def login_page(request: Request):
     show_toast = request.session.pop('show_login_toast', False)
-    return templates.TemplateResponse('login.html', {'request': request, 'show_toast': show_toast})
+    return templates.TemplateResponse(request, 'login.html', {'show_toast': show_toast})
 
 
 # ─────────────── Google OAuth ───────────────
@@ -385,7 +385,7 @@ async def google_callback(request: Request):
 def set_nickname_page(request: Request):
     if not request.session.get('pending_google_id'):
         return RedirectResponse('/login_page', status_code=302)
-    return templates.TemplateResponse('set-nickname.html', {'request': request})
+    return templates.TemplateResponse(request, 'set-nickname.html')
 
 
 @app.post('/set_nickname')
@@ -398,9 +398,9 @@ async def set_nickname_submit(request: Request):
     if not google_id or not email:
         return RedirectResponse('/login_page', status_code=302)
     if not nickname:
-        return templates.TemplateResponse('set-nickname.html', {'request': request, 'error': '닉네임을 입력해주세요.'})
+        return templates.TemplateResponse(request, 'set-nickname.html', {'error': '닉네임을 입력해주세요.'})
     if len(nickname) > 20:
-        return templates.TemplateResponse('set-nickname.html', {'request': request, 'error': '닉네임은 20자 이하여야 합니다.'})
+        return templates.TemplateResponse(request, 'set-nickname.html', {'error': '닉네임은 20자 이하여야 합니다.'})
 
     with Session(engine) as db_session:
         new_user = User(username=email, google_id=google_id, nickname=nickname)
@@ -428,8 +428,7 @@ def home(request: Request):
             admin_discord = owner.discord_id if owner and owner.discord_id else None
     except Exception as e:
         print(f"[WARN] home DB query failed: {e}")
-    return templates.TemplateResponse('main.html', {
-        'request': request,
+    return templates.TemplateResponse(request, 'main.html', {
         'user_id': nickname,
         'show_toast': show_toast,
         'is_admin': check_admin(request.session),
@@ -526,8 +525,7 @@ def members_page(request: Request):
     except Exception:
         pass
 
-    return templates.TemplateResponse('members.html', {
-        'request': request,
+    return templates.TemplateResponse(request, 'members.html', {
         'user_id': nickname,
         'is_admin': check_admin(request.session),
         'raw_user_id': current_user,
@@ -580,8 +578,7 @@ def notice(request: Request):
     except Exception:
         pass
 
-    return templates.TemplateResponse('notice.html', {
-        'request': request,
+    return templates.TemplateResponse(request, 'notice.html', {
         'user_id': nickname,
         'current_user': request.session.get('user_id', ''),
         'is_admin': check_admin(request.session),
@@ -783,8 +780,7 @@ def admin_page(request: Request):
     except Exception:
         pass
 
-    return templates.TemplateResponse('admin.html', {
-        'request': request,
+    return templates.TemplateResponse(request, 'admin.html', {
         'user_id': nickname,
         'current_user': request.session['user_id'],
         'is_superadmin': check_superadmin(request.session),
@@ -1076,8 +1072,7 @@ def user_profile(target_username: str, request: Request):
 
     is_self = request.session['user_id'] == target_username
     nickname = request.session.get('nickname', request.session['user_id'])
-    return templates.TemplateResponse('user_profile.html', {
-        'request': request,
+    return templates.TemplateResponse(request, 'user_profile.html', {
         'user_id': nickname,
         'target_username': target_username,
         'target_nickname': target.nickname or target_username,
@@ -1125,8 +1120,7 @@ def recruit(request: Request):
     except Exception:
         pass
 
-    return templates.TemplateResponse('recruit.html', {
-        'request': request,
+    return templates.TemplateResponse(request, 'recruit.html', {
         'user_id': nickname,
         'is_admin': check_admin(request.session),
         'raw_user_id': current_user,
@@ -1861,8 +1855,7 @@ def showcase_page(request: Request):
         return RedirectResponse('/login_page', status_code=302)
     current_user = request.session['user_id']
     nickname = request.session.get('nickname', current_user)
-    return templates.TemplateResponse('showcase.html', {
-        'request': request,
+    return templates.TemplateResponse(request, 'showcase.html', {
         'user_id': nickname,
         'raw_user_id': current_user,
         'is_admin': check_admin(request.session),
