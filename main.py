@@ -249,31 +249,36 @@ def invalidate_user_cache():
 
 
 # ─────────────── 권한 헬퍼 ───────────────
+def _get_user_cached(uid: str):
+    """캐시된 유저 목록에서 검색 (없으면 DB 직접 조회)"""
+    for u in get_all_users():
+        if u.username == uid:
+            return u
+    return None
+
+
 def check_admin(sess: dict) -> bool:
     uid = sess.get('user_id')
     if not uid:
         return False
-    with Session(engine) as db_session:
-        u = db_session.exec(select(User).where(User.username == uid)).first()
-        return bool(u and u.is_admin)
+    u = _get_user_cached(uid)
+    return bool(u and u.is_admin)
 
 
 def check_superadmin(sess: dict) -> bool:
     uid = sess.get('user_id')
     if not uid:
         return False
-    with Session(engine) as db_session:
-        u = db_session.exec(select(User).where(User.username == uid)).first()
-        return bool(u and u.is_superadmin)
+    u = _get_user_cached(uid)
+    return bool(u and u.is_superadmin)
 
 
 def check_owner(sess: dict) -> bool:
     uid = sess.get('user_id')
     if not uid:
         return False
-    with Session(engine) as db_session:
-        u = db_session.exec(select(User).where(User.username == uid)).first()
-        return bool(u and u.is_owner)
+    u = _get_user_cached(uid)
+    return bool(u and u.is_owner)
 
 
 # ─────────────── 전역 예외 핸들러 (에러 원인 로깅용) ───────────────
@@ -1035,8 +1040,10 @@ def api_search(request: Request):
 @app.get('/api/stats')
 def api_stats(request: Request):
     with Session(engine) as db_session:
-        user_count = db_session.exec(select(func.count(User.id))).one()
-        profile_count = db_session.exec(select(func.count(Profile.id))).one()
+        user_count    = db_session.exec(select(func.count(User.id))).one()
+        profile_count = db_session.exec(
+            select(func.count(Profile.id)).where(Profile.post_type == 'recruit')
+        ).one()
     return {"users": user_count, "profiles": profile_count}
 
 
@@ -1063,8 +1070,12 @@ def user_profile(target_username: str, request: Request):
             select(Team).join(TeamMember, Team.id == TeamMember.team_id)
             .where(TeamMember.user_id == target_username, TeamMember.status == 'accepted')
         ).all()
-        nick_map = {u.username: (u.nickname or u.username)
-                    for u in db_session.exec(select(User)).all()}
+        leader_ids = {t.leader_id for t in member_teams_rows}
+        if leader_ids:
+            nick_users = db_session.exec(select(User).where(User.username.in_(leader_ids))).all()
+        else:
+            nick_users = []
+        nick_map = {u.username: (u.nickname or u.username) for u in nick_users}
 
         profile_list = []
         for p in profiles:
@@ -1160,7 +1171,11 @@ def get_profiles(request: Request):
                 .where(Profile.post_type == ptype)
                 .order_by(Profile.created_at)
             ).all()
-            users = db_session.exec(select(User)).all()
+            owner_ids = {p.user_id for p in profiles}
+            if owner_ids:
+                users = db_session.exec(select(User).where(User.username.in_(owner_ids))).all()
+            else:
+                users = []
             interests = db_session.exec(
                 select(RecruitInterest).where(RecruitInterest.sender_id == current_user)
             ).all()
@@ -1604,12 +1619,12 @@ def dm_unread(request: Request):
         return {"unread": 0}
     current_user = request.session['user_id']
     with Session(engine) as db_session:
-        count = len(db_session.exec(
-            select(DirectMessage).where(
+        count = db_session.exec(
+            select(func.count(DirectMessage.id)).where(
                 DirectMessage.receiver_id == current_user,
                 DirectMessage.is_read == False
             )
-        ).all())
+        ).one()
     return {"unread": count}
 
 
@@ -1625,8 +1640,17 @@ def dm_conversations(request: Request):
                     DirectMessage.receiver_id == current_user)
             ).order_by(DirectMessage.created_at.desc())
         ).all()
-        users = db_session.exec(select(User)).all()
-        nickname_map = {u.username: (u.nickname or u.username) for u in users}
+        partner_ids = {
+            (m.receiver_id if m.sender_id == current_user else m.sender_id)
+            for m in messages
+        }
+        if partner_ids:
+            partners = db_session.exec(
+                select(User).where(User.username.in_(partner_ids))
+            ).all()
+        else:
+            partners = []
+        nickname_map = {u.username: (u.nickname or u.username) for u in partners}
     conv_map = {}
     for msg in messages:
         partner = msg.receiver_id if msg.sender_id == current_user else msg.sender_id
