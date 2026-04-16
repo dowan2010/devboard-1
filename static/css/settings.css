@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600;700&display=swap');
 a { text-decoration: none; }
 
 * {
@@ -30,7 +31,8 @@ a { text-decoration: none; }
 body {
     background: #ffffff;
     min-height: 100vh;
-    font-family: sans-serif;
+    font-family: 'Noto Sans', sans-serif;
+    color: #1c1c1e;
 }
 
 /* ── 상단 바 ── */
@@ -41,7 +43,7 @@ body {
     background-color: rgba(255, 255, 255, 1);
     backdrop-filter: blur(8px);
     padding: 16px 32px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: rgb(224,226,232) 0px 0px 0px 1px;
     position: sticky;
     top: 0;
     z-index: 100;
@@ -88,17 +90,19 @@ body {
 
 .logout-btn {
     text-decoration: none;
-    background-color: rgb(143, 203, 255);
-    color: #333;
+    background: transparent;
+    color: #555a6a;
     padding: 8px 20px;
-    border-radius: 12px;
+    border-radius: 8px;
     font-size: 14px;
-    font-weight: bold;
-    transition: background-color 0.2s;
+    font-weight: 500;
+    border: 1px solid #c7cad5;
+    transition: background 0.15s, border-color 0.15s;
 }
 
 .logout-btn:hover {
-    background-color: rgb(100, 170, 240);
+    background: #f5f5f7;
+    border-color: #a5a8b5;
 }
 
 /* ── 페이지 ── */
@@ -190,7 +194,8 @@ body {
 }
 
 .nickname-input:focus {
-    border-color: rgb(143, 203, 255);
+    border-color: #5b76fe;
+    box-shadow: 0 0 0 3px rgba(91,118,254,0.12);
 }
 
 .char-count {
@@ -215,18 +220,19 @@ body {
 
 .save-btn {
     padding: 13px;
-    background: linear-gradient(135deg, rgb(143, 203, 255), rgb(100, 170, 240));
+    background: #5b76fe;
     color: white;
     font-size: 15px;
-    font-weight: bold;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
     border: none;
-    border-radius: 12px;
+    border-radius: 8px;
     cursor: pointer;
-    transition: opacity 0.2s, transform 0.1s;
+    transition: background 0.15s, transform 0.1s;
 }
 
 .save-btn:hover {
-    opacity: 0.9;
+    background: #2a41b6;
     transform: translateY(-1px);
 }
 
@@ -242,8 +248,8 @@ body.dark {
 }
 body.dark .topbar {
     background: linear-gradient(135deg, #0f0f26 0%, #131330 100%);
-    border-bottom: 2px solid rgba(91, 94, 247, 0.5);
-    box-shadow: 0 4px 28px rgba(0,0,0,0.7), 0 1px 0 rgba(91,94,247,0.2);
+    border-bottom: 2px solid rgba(91, 118, 254, 0.5);
+    box-shadow: 0 4px 28px rgba(0,0,0,0.7), 0 1px 0 rgba(91, 118, 254,0.2);
 }
 body.dark .page-title,
 body.dark .welcome {
@@ -326,7 +332,7 @@ body.dark .logout-btn:hover {
     text-decoration: none;
     transition: color 0.2s;
 }
-.site-footer a:hover { color: #667eea; }
+.site-footer a:hover { color: #5b76fe; }
 .dark .site-footer { border-top-color: rgba(255,255,255,0.08); }
 .dark .site-footer a { color: #666; }
 .dark .site-footer a:hover { color: #a78bfa; }
@@ -348,9 +354,9 @@ body.dark .logout-btn:hover {
     box-sizing: border-box;
     background: #fafafa;
 }
-.social-input:focus { border-color: #667eea; background: #fff; }
+.social-input:focus { border-color: #5b76fe; background: #fff; box-shadow: 0 0 0 3px rgba(91,118,254,0.1); }
 .dark .social-input { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: #eee; }
-.dark .social-input:focus { border-color: #818cf8; background: rgba(255,255,255,0.08); }
+.dark .social-input:focus { border-color: #5b76fe; background: rgba(255,255,255,0.08); }
 .dark .social-label { color: #666; }
 
 /* ── 다크모드 아이콘 버튼 ── */

@@ -1,12 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600;700&display=swap');
 /* ════════════════════════════════════════
    디자인 토큰 (색상·반경·그림자 통일)
    ════════════════════════════════════════ */
 :root {
     /* 브랜드 색상 */
-    --primary:        #5b5ef7;
-    --primary-light:  rgba(91, 94, 247, 0.08);
-    --primary-hover:  rgba(91, 94, 247, 0.16);
-    --primary-muted:  rgba(91, 94, 247, 0.5);
+    --primary:        #5b76fe;
+    --primary-light:  rgba(91, 118, 254, 0.08);
+    --primary-hover:  rgba(91, 118, 254, 0.16);
+    --primary-muted:  rgba(91, 118, 254, 0.5);
 
     /* 상태 색상 */
     --success:        #27ae60;
@@ -31,8 +32,8 @@
 
     /* 카드 */
     --card-bg:     rgba(255, 255, 255, 0.9);
-    --card-shadow: 0 4px 20px rgba(91, 94, 247, 0.08);
-    --card-hover:  0 12px 36px rgba(91, 94, 247, 0.16);
+    --card-shadow: 0 4px 20px rgba(91, 118, 254, 0.08);
+    --card-hover:  0 12px 36px rgba(91, 118, 254, 0.16);
 }
 
 /* ── Lucide 인라인 아이콘 ── */
@@ -75,7 +76,8 @@ a { text-decoration: none; }
 body {
     background: #ffffff;
     min-height: 100vh;
-    font-family: sans-serif;
+    font-family: 'Noto Sans', sans-serif;
+    color: #1c1c1e;
 }
 
 /* ── 상단 바 ── */
@@ -86,7 +88,7 @@ body {
     background-color: rgba(255, 255, 255, 1);
     backdrop-filter: blur(8px);
     padding: 16px 32px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: rgb(224,226,232) 0px 0px 0px 1px;
     position: sticky;
     top: 0;
     z-index: 100;
@@ -234,11 +236,11 @@ body.dark .nav-link.active { background: rgba(120,120,255,0.15); color: #a0a3ff;
 }
 .notif-row:last-child { border-bottom: none; }
 .notif-row:hover { background: rgba(0,0,0,0.03); }
-.notif-unread { background: rgba(91,94,247,0.05); }
+.notif-unread { background: rgba(91, 118, 254,0.05); }
 .notif-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
 .notif-info { flex: 1; min-width: 0; }
 .notif-msg { font-size: 13px; color: #333; line-height: 1.5; }
-.notif-msg b { color: #5b5ef7; }
+.notif-msg b { color: #5b76fe; }
 .notif-time { font-size: 11px; color: #aaa; margin-top: 3px; }
 .notif-empty { padding: 28px 16px; text-align: center; color: #bbb; font-size: 14px; }
 
@@ -274,18 +276,20 @@ body.dark .nav-link.active { background: rgba(120,120,255,0.15); color: #a0a3ff;
 .section-header {
     text-align: center;
     margin-bottom: 36px;
-    color: white;
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    color: #1c1c1e;
 }
 
 .section-header h2 {
     font-size: 28px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.5px;
     margin-bottom: 8px;
 }
 
 .section-header p {
     font-size: 15px;
-    opacity: 0.9;
+    color: #555a6a;
 }
 
 /* ── 게시판 검색창 ── */
@@ -294,37 +298,38 @@ body.dark .nav-link.active { background: rgba(120,120,255,0.15); color: #a0a3ff;
     align-items: center;
     max-width: 420px;
     margin: -16px auto 28px;
-    background: rgba(255,255,255,0.18);
-    backdrop-filter: blur(10px);
-    border: 1.5px solid rgba(255,255,255,0.35);
-    border-radius: 14px;
+    background: #f5f5f7;
+    border: 1px solid #e9eaef;
+    border-radius: 8px;
     padding: 10px 16px;
     gap: 8px;
-    transition: background 0.2s, border-color 0.2s;
+    transition: border-color 0.15s, box-shadow 0.15s;
 }
 .board-search-wrap:focus-within {
-    background: rgba(255,255,255,0.28);
-    border-color: rgba(255,255,255,0.65);
+    background: #ffffff;
+    border-color: #5b76fe;
+    box-shadow: 0 0 0 3px rgba(91,118,254,0.12);
 }
-.board-search-icon { font-size: 15px; flex-shrink: 0; }
+.board-search-icon { font-size: 15px; flex-shrink: 0; color: #a5a8b5; }
 .board-search-input {
     flex: 1;
     border: none;
     background: transparent;
     font-size: 14px;
-    color: #fff;
+    color: #1c1c1e;
     outline: none;
+    font-family: 'Noto Sans', sans-serif;
 }
-.board-search-input::placeholder { color: rgba(255,255,255,0.6); }
+.board-search-input::placeholder { color: #a5a8b5; }
 .board-search-clear {
     border: none; background: none; cursor: pointer;
-    color: rgba(255,255,255,0.7); font-size: 13px; padding: 0 2px;
+    color: #a5a8b5; font-size: 13px; padding: 0 2px;
     flex-shrink: 0;
 }
-.board-search-clear:hover { color: #fff; }
+.board-search-clear:hover { color: #555a6a; }
 .board-search-empty {
     text-align: center;
-    color: rgba(255,255,255,0.75);
+    color: #6e7182;
     font-size: 15px;
     padding: 48px 0;
 }
@@ -333,13 +338,17 @@ body.dark .nav-link.active { background: rgba(120,120,255,0.15); color: #a0a3ff;
 /* 다크모드 검색창 */
 body.dark .board-search-wrap {
     background: rgba(255,255,255,0.07);
-    border-color: rgba(255,255,255,0.15);
+    border-color: rgba(255,255,255,0.1);
 }
 body.dark .board-search-wrap:focus-within {
-    background: rgba(255,255,255,0.12);
-    border-color: rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.1);
+    border-color: #5b76fe;
+    box-shadow: 0 0 0 3px rgba(91,118,254,0.15);
 }
-body.dark .board-search-icon { color: rgba(255,255,255,0.6); }
+body.dark .board-search-icon { color: #666; }
+body.dark .board-search-input { color: #e0e0e0; }
+body.dark .board-search-input::placeholder { color: #555; }
+body.dark .board-search-empty { color: #666; }
 
 /* ── 카드 그리드 ── */
 .cards-grid {
@@ -351,7 +360,7 @@ body.dark .board-search-icon { color: rgba(255,255,255,0.6); }
 .loading {
     grid-column: 1 / -1;
     text-align: center;
-    color: white;
+    color: #a5a8b5;
     font-size: 16px;
     padding: 60px;
 }
@@ -432,7 +441,7 @@ body.dark .board-search-icon { color: rgba(255,255,255,0.6); }
 }
 
 .card-mine {
-    border: 2px solid rgba(91, 94, 247, 0.35);
+    border: 2px solid rgba(91, 118, 254, 0.35);
 }
 
 /* ── 내 팀 카드 (프로필 카드 스타일) ── */
@@ -634,7 +643,7 @@ body.dark .board-search-icon { color: rgba(255,255,255,0.6); }
 .count-btn:hover { background: var(--primary); color: #fff; transform: scale(1.1); }
 .count-btn:active { transform: scale(0.95); }
 #countDisplay { font-size: 24px; font-weight: 900; color: var(--primary); min-width: 32px; text-align: center; }
-body.dark .count-btn { background: rgba(91,94,247,0.15); border-color: var(--primary); color: #9b9ef7; }
+body.dark .count-btn { background: rgba(91, 118, 254,0.15); border-color: var(--primary); color: #8a9ffe; }
 body.dark .count-btn:hover { background: var(--primary); color: #fff; }
 
 /* ── 팀 카드 ── */
@@ -773,12 +782,12 @@ body.dark .team-leave-btn { border-color: rgba(212,136,10,0.5); color: #e0c060; 
     transition: all 0.15s;
 }
 .team-field-select-btn.active {
-    background: #667eea;
-    border-color: #667eea;
+    background: #5b76fe;
+    border-color: #5b76fe;
     color: #fff;
 }
 body.dark .team-field-select-btn { background: #2a2a3e; border-color: #444; color: #aaa; }
-body.dark .team-field-select-btn.active { background: #667eea; border-color: #667eea; color: #fff; }
+body.dark .team-field-select-btn.active { background: #5b76fe; border-color: #5b76fe; color: #fff; }
 .team-manage-btn {
     flex: 1;
     padding: 9px;
@@ -890,7 +899,7 @@ body.dark .team-field-select-btn.active { background: #667eea; border-color: #66
 
 .profile-major-badge {
     background: var(--primary-light);
-    border: 1px solid rgba(91, 94, 247, 0.3);
+    border: 1px solid rgba(91, 118, 254, 0.3);
     color: var(--primary);
     font-size: 12px;
     font-weight: bold;
@@ -911,7 +920,8 @@ body.dark .team-field-select-btn.active { background: #667eea; border-color: #66
     color: #333;
 }
 .bio-textarea:focus {
-    border-color: rgb(143, 203, 255);
+    border-color: #5b76fe;
+    box-shadow: 0 0 0 3px rgba(91,118,254,0.1);
 }
 
 .profile-bio {
@@ -1069,7 +1079,7 @@ body.dark .team-field-select-btn.active { background: #667eea; border-color: #66
 }
 
 .image-preview-circle:hover {
-    border-color: rgb(143, 203, 255);
+    border-color: #5b76fe;
 }
 
 .image-preview-circle img {
@@ -1139,7 +1149,8 @@ body.dark .team-field-select-btn.active { background: #667eea; border-color: #66
 }
 
 .form-group input[type="text"]:focus {
-    border-color: rgb(143, 203, 255);
+    border-color: #5b76fe;
+    box-shadow: 0 0 0 3px rgba(91,118,254,0.1);
 }
 
 /* ── 언어 박스 ── */
@@ -1154,7 +1165,7 @@ body.dark .team-field-select-btn.active { background: #667eea; border-color: #66
 }
 
 .lang-box:focus-within {
-    border-color: rgb(143, 203, 255);
+    border-color: #5b76fe;
 }
 
 .lang-tags {
@@ -1221,8 +1232,8 @@ body.dark .team-field-select-btn.active { background: #667eea; border-color: #66
 }
 
 .preset-btn.active {
-    background: rgb(143, 203, 255);
-    border-color: rgb(100, 170, 240);
+    background: #5b76fe;
+    border-color: #5b76fe;
     color: white;
 }
 
@@ -1375,7 +1386,7 @@ body.dark .team-field-select-btn.active { background: #667eea; border-color: #66
     transition: background 0.12s;
     border-bottom: 1px solid rgba(0,0,0,0.04);
 }
-.dm-conv-row:hover { background: rgba(91,94,247,0.06); }
+.dm-conv-row:hover { background: rgba(91, 118, 254,0.06); }
 .dm-conv-avatar {
     width: 44px; height: 44px;
     border-radius: 50%;
@@ -1390,7 +1401,7 @@ body.dark .team-field-select-btn.active { background: #667eea; border-color: #66
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .dm-conv-unread {
-    background: #5b5ef7;
+    background: #5b76fe;
     color: #fff;
     font-size: 11px;
     font-weight: bold;
@@ -1419,7 +1430,7 @@ body.dark .team-field-select-btn.active { background: #667eea; border-color: #66
     word-break: break-word;
 }
 .dm-msg-mine .dm-msg-bubble {
-    background: #5b5ef7;
+    background: #5b76fe;
     color: #fff;
     border-bottom-right-radius: 5px;
 }
@@ -1458,12 +1469,12 @@ body.dark .team-field-select-btn.active { background: #667eea; border-color: #66
     transition: border-color 0.2s;
     font-family: inherit;
 }
-.dm-input:focus { border-color: #5b5ef7; }
+.dm-input:focus { border-color: #5b76fe; }
 .dm-send-btn {
     width: 38px; height: 38px;
     border-radius: 50%;
     border: none;
-    background: #5b5ef7;
+    background: #5b76fe;
     color: #fff;
     font-size: 18px;
     font-weight: bold;
@@ -1499,20 +1510,20 @@ body.dark .team-field-select-btn.active { background: #667eea; border-color: #66
 /* ── 관리자 버튼 ── */
 .admin-link-btn {
     text-decoration: none;
-    background: rgba(91,94,247,0.12);
-    color: #5b5ef7;
+    background: rgba(91, 118, 254,0.12);
+    color: #5b76fe;
     padding: 6px 14px;
     border-radius: 10px;
     font-size: 13px;
     font-weight: 600;
     transition: background 0.2s;
 }
-.admin-link-btn:hover { background: rgba(91,94,247,0.22); }
+.admin-link-btn:hover { background: rgba(91, 118, 254,0.22); }
 body.dark .admin-link-btn {
-    background: rgba(91,94,247,0.2);
-    color: #9b9ef7;
+    background: rgba(91, 118, 254,0.2);
+    color: #8a9ffe;
 }
-body.dark .admin-link-btn:hover { background: rgba(91,94,247,0.35); }
+body.dark .admin-link-btn:hover { background: rgba(91, 118, 254,0.35); }
 
 /* ── 다크모드 전체 ── */
 body.dark {
@@ -1521,17 +1532,17 @@ body.dark {
 }
 body.dark .topbar {
     background: linear-gradient(135deg, #0f0f26 0%, #131330 100%);
-    border-bottom: 2px solid rgba(91, 94, 247, 0.5);
-    box-shadow: 0 4px 28px rgba(0,0,0,0.7), 0 1px 0 rgba(91,94,247,0.2);
+    border-bottom: 2px solid rgba(91, 118, 254, 0.5);
+    box-shadow: 0 4px 28px rgba(0,0,0,0.7), 0 1px 0 rgba(91, 118, 254,0.2);
 }
 body.dark .page-title,
 body.dark .welcome {
     color: #ccc;
 }
-body.dark .site-logo { color: #9b9ef7; }
+body.dark .site-logo { color: #8a9ffe; }
 body.dark .logout-btn {
-    background: rgba(91,94,247,0.2);
-    color: #9b9ef7;
+    background: rgba(91, 118, 254,0.2);
+    color: #8a9ffe;
 }
 /* 다크모드 topbar 아이콘 버튼 */
 body.dark .dm-topbar-btn,
@@ -1550,15 +1561,15 @@ body.dark .board-tab {
     color: #888;
 }
 body.dark .board-tab.active {
-    background: rgba(91,94,247,0.85);
+    background: rgba(91, 118, 254,0.85);
     color: #fff;
 }
 body.dark .board-tab.active .tab-sub {
     color: rgba(255,255,255,0.65);
 }
 body.dark .board-tab:hover:not(.active) {
-    background: rgba(91,94,247,0.15);
-    color: #9b9ef7;
+    background: rgba(91, 118, 254,0.15);
+    color: #8a9ffe;
 }
 body.dark .section-header h2 { color: #ddd; }
 body.dark .section-header p  { color: #888; }
@@ -1574,8 +1585,8 @@ body.dark .profile-major { color: #aaa; }
 body.dark .profile-bio   { color: #999; }
 body.dark .langs-label   { color: #888; }
 body.dark .chip-past {
-    background: rgba(91,94,247,0.18);
-    color: #9b9ef7;
+    background: rgba(91, 118, 254,0.18);
+    color: #8a9ffe;
 }
 body.dark .chip-curr {
     background: rgba(67,233,123,0.13);
@@ -1583,16 +1594,16 @@ body.dark .chip-curr {
 }
 body.dark .no-lang { color: #555; }
 body.dark .recruit-interest-btn {
-    background: rgba(91,94,247,0.15);
-    color: #9b9ef7;
-    border-color: rgba(91,94,247,0.3);
+    background: rgba(91, 118, 254,0.15);
+    color: #8a9ffe;
+    border-color: rgba(91, 118, 254,0.3);
 }
 body.dark .recruit-interest-btn:hover {
-    background: rgba(91,94,247,0.3);
+    background: rgba(91, 118, 254,0.3);
 }
 body.dark .mine-badge {
-    background: rgba(91,94,247,0.22);
-    color: #9b9ef7;
+    background: rgba(91, 118, 254,0.22);
+    color: #8a9ffe;
 }
 body.dark .card-plus {
     background: rgba(35, 35, 60, 0.7);
@@ -1600,8 +1611,8 @@ body.dark .card-plus {
     color: #888;
 }
 body.dark .card-plus:hover {
-    background: rgba(91,94,247,0.15);
-    border-color: rgba(91,94,247,0.4);
+    background: rgba(91, 118, 254,0.15);
+    border-color: rgba(91, 118, 254,0.4);
 }
 
 /* 팀 카드 */
@@ -1613,8 +1624,8 @@ body.dark .team-name   { color: #e0e0e0; }
 body.dark .team-desc   { color: #999; }
 body.dark .team-meta   { color: #888; }
 body.dark .team-field-badge {
-    background: rgba(91,94,247,0.2);
-    color: #9b9ef7;
+    background: rgba(91, 118, 254,0.2);
+    color: #8a9ffe;
 }
 
 /* 모달 */
@@ -1644,9 +1655,9 @@ body.dark .preset-btn {
     color: #bbb;
 }
 body.dark .preset-btn.active {
-    background: rgba(91,94,247,0.25);
-    border-color: rgba(91,94,247,0.5);
-    color: #9b9ef7;
+    background: rgba(91, 118, 254,0.25);
+    border-color: rgba(91, 118, 254,0.5);
+    color: #8a9ffe;
 }
 body.dark .lang-text-input {
     background: transparent;
@@ -1655,9 +1666,9 @@ body.dark .lang-text-input {
 }
 body.dark .lang-text-input::placeholder { color: #555; }
 body.dark .lang-tag {
-    background: rgba(91,94,247,0.2);
-    border-color: rgba(91,94,247,0.4);
-    color: #9b9ef7;
+    background: rgba(91, 118, 254,0.2);
+    border-color: rgba(91, 118, 254,0.4);
+    color: #8a9ffe;
 }
 
 /* 알림 드롭다운 */
@@ -1669,7 +1680,7 @@ body.dark .notif-row { border-bottom-color: rgba(255,255,255,0.06); }
 body.dark .notif-row:hover { background: rgba(255,255,255,0.04); }
 body.dark .notif-msg  { color: #ccc; }
 body.dark .notif-time { color: #666; }
-body.dark .notif-unread { background: rgba(91,94,247,0.12); }
+body.dark .notif-unread { background: rgba(91, 118, 254,0.12); }
 
 /* DM 패널 */
 body.dark .dm-panel {
@@ -1683,7 +1694,7 @@ body.dark .dm-panel-title { color: #ddd; }
 body.dark .dm-back-btn,
 body.dark .dm-panel-close { color: #999; }
 body.dark .dm-conv-row { border-bottom-color: rgba(255,255,255,0.05); }
-body.dark .dm-conv-row:hover { background: rgba(91,94,247,0.1); }
+body.dark .dm-conv-row:hover { background: rgba(91, 118, 254,0.1); }
 body.dark .dm-conv-name { color: #ddd; }
 body.dark .dm-conv-last { color: #666; }
 body.dark .dm-msg-other .dm-msg-bubble {
@@ -1704,7 +1715,7 @@ body.dark .team-joined-badge  { background: rgba(39,174,96,0.15);  color: #5bcfa
 body.dark .team-pending-badge { background: rgba(224,160,32,0.15); color: #e0c060; }
 body.dark .team-full-badge    { background: rgba(255,255,255,0.05); color: #666; }
 body.dark .team-rejected-badge { background: rgba(224,85,85,0.12); color: #e06060; }
-body.dark .team-manage-btn    { border-color: rgba(155,158,247,0.5); color: #9b9ef7; background: rgba(91,94,247,0.1); }
+body.dark .team-manage-btn    { border-color: rgba(155,158,247,0.5); color: #8a9ffe; background: rgba(91, 118, 254,0.1); }
 body.dark .pending-row        { background: rgba(255,255,255,0.04); border-bottom-color: rgba(255,255,255,0.06); }
 body.dark .pending-name       { color: #ddd; }
 body.dark .card-divider       { border-color: rgba(255,255,255,0.07); }
@@ -1728,7 +1739,7 @@ body.dark .bio-textarea::placeholder { color: #555 !important; }
     font-size: 13px;
 }
 .site-footer a { color: #888; text-decoration: none; }
-.site-footer a:hover { color: #667eea; }
+.site-footer a:hover { color: #5b76fe; }
 .dark .site-footer { border-top-color: rgba(255,255,255,0.08); }
 .dark .site-footer a { color: #666; }
 .dark .site-footer a:hover { color: #a78bfa; }

@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600;700&display=swap');
+
 * {
     margin: 0;
     padding: 0;
@@ -11,7 +13,8 @@ a { text-decoration: none; }
 body {
     background: #ffffff;
     min-height: 100vh;
-    font-family: sans-serif;
+    font-family: 'Noto Sans', sans-serif;
+    color: #1c1c1e;
 }
 
 /* 로그인 성공 토스트 */
@@ -41,34 +44,37 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: rgba(255, 255, 255, 1);
-    backdrop-filter: blur(8px);
-    padding: 16px 32px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background-color: #ffffff;
+    padding: 14px 32px;
+    box-shadow: rgb(224,226,232) 0px 0px 0px 1px;
     position: relative;
+    z-index: 100;
 }
 
 
 .welcome {
-    font-size: 16px;
-    font-weight: bold;
-    color: #333;
+    font-size: 15px;
+    font-weight: 500;
+    color: #555a6a;
 }
 
 .logout-btn {
     text-decoration: none;
-    background-color: rgb(143, 203, 255);
-    color: #333;
-    padding: 8px 20px;
-    border-radius: 12px;
+    background: transparent;
+    color: #555a6a;
+    padding: 7px 16px;
+    border-radius: 8px;
     font-size: 14px;
-    font-weight: bold;
-    transition: background-color 0.2s;
+    font-weight: 500;
+    border: 1px solid #c7cad5;
+    transition: background 0.15s, border-color 0.15s;
     white-space: nowrap;
+    font-family: 'DM Sans', sans-serif;
 }
 
 .logout-btn:hover {
-    background-color: rgb(100, 170, 240);
+    background: #f5f5f7;
+    border-color: #a5a8b5;
 }
 
 /* 네비게이션 메뉴 */
@@ -81,18 +87,19 @@ body {
 
 .nav-link {
     text-decoration: none;
-    color: #444;
+    color: #1c1c1e;
     font-size: 14px;
-    font-weight: bold;
-    padding: 7px 16px;
-    border-radius: 10px;
-    transition: background 0.2s, color 0.2s;
+    font-weight: 500;
+    padding: 7px 14px;
+    border-radius: 8px;
+    transition: background 0.15s, color 0.15s;
     position: relative;
+    font-family: 'Noto Sans', sans-serif;
 }
 
 .nav-link:hover {
-    background: rgba(143, 203, 255, 0.25);
-    color: #1a73e8;
+    background: rgba(91, 118, 254, 0.07);
+    color: #5b76fe;
 }
 
 /* 상단바 NEW 빨간 점 */
@@ -192,11 +199,11 @@ body {
 }
 .notif-row:last-child { border-bottom: none; }
 .notif-row:hover { background: rgba(0,0,0,0.03); }
-.notif-unread { background: rgba(91,94,247,0.05); }
+.notif-unread { background: rgba(91, 118, 254,0.05); }
 .notif-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
 .notif-info { flex: 1; min-width: 0; }
 .notif-msg { font-size: 13px; color: #333; line-height: 1.5; }
-.notif-msg b { color: #5b5ef7; }
+.notif-msg b { color: #5b76fe; }
 .notif-time { font-size: 11px; color: #aaa; margin-top: 3px; }
 .notif-empty { padding: 28px 16px; text-align: center; color: #bbb; font-size: 14px; }
 body.dark .notif-dropdown {
@@ -207,7 +214,7 @@ body.dark .notif-row { border-bottom-color: rgba(255,255,255,0.06); }
 body.dark .notif-row:hover { background: rgba(255,255,255,0.04); }
 body.dark .notif-msg  { color: #ccc; }
 body.dark .notif-time { color: #666; }
-body.dark .notif-unread { background: rgba(91,94,247,0.12); }
+body.dark .notif-unread { background: rgba(91, 118, 254,0.12); }
 
 .topbar-right {
     display: flex;
@@ -222,18 +229,19 @@ body.dark .notif-unread { background: rgba(91,94,247,0.12); }
 
 .login-hint-btn {
     text-decoration: none;
-    color: #555;
+    color: #555a6a;
     font-size: 14px;
-    font-weight: bold;
-    padding: 8px 18px;
-    border-radius: 12px;
-    border: 1.5px solid #ccc;
-    transition: background-color 0.2s, border-color 0.2s;
+    font-weight: 500;
+    padding: 7px 16px;
+    border-radius: 8px;
+    border: 1px solid #c7cad5;
+    transition: background 0.15s, border-color 0.15s;
+    font-family: 'DM Sans', sans-serif;
 }
 
 .login-hint-btn:hover {
-    background-color: rgba(255, 255, 255, 0.6);
-    border-color: #aaa;
+    background: #f5f5f7;
+    border-color: #a5a8b5;
 }
 
 
@@ -248,10 +256,11 @@ body.dark .notif-unread { background: rgba(91,94,247,0.12); }
 .site-logo {
     text-decoration: none;
     font-size: 17px;
-    font-weight: 900;
-    color: #5b5ef7;
-    letter-spacing: -0.3px;
+    font-weight: 700;
+    color: #1c1c1e;
+    letter-spacing: -0.5px;
     transition: opacity 0.2s;
+    font-family: 'DM Sans', sans-serif;
 }
 
 .site-logo:hover {
@@ -319,7 +328,7 @@ body.dark .notif-unread { background: rgba(91,94,247,0.12); }
 
 /* 다크모드 - 로고·버튼 */
 body.dark .site-logo {
-    color: #9b9ef7;
+    color: #8a9ffe;
 }
 
 body.dark .scroll-top-btn {
@@ -342,19 +351,20 @@ body.dark .stat-card {
 .search-wrap {
     display: flex;
     align-items: center;
-    background: rgba(255, 255, 255, 0.6);
-    border: 1.5px solid rgba(0,0,0,0.1);
-    border-radius: 22px;
-    padding: 6px 14px;
+    background: #f5f5f7;
+    border: 1px solid #e9eaef;
+    border-radius: 8px;
+    padding: 7px 14px;
     gap: 6px;
     width: 100%;
     max-width: 280px;
-    transition: background 0.2s, box-shadow 0.2s;
+    transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .search-wrap:focus-within {
-    background: rgba(255, 255, 255, 0.95);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    background: #ffffff;
+    border-color: #5b76fe;
+    box-shadow: 0 0 0 3px rgba(91, 118, 254, 0.12);
 }
 
 .search-icon {
@@ -366,13 +376,14 @@ body.dark .stat-card {
     border: none;
     background: transparent;
     outline: none;
-    font-size: 13px;
-    color: #333;
+    font-size: 14px;
+    color: #1c1c1e;
     width: 100%;
+    font-family: 'Noto Sans', sans-serif;
 }
 
 .search-input::placeholder {
-    color: #aaa;
+    color: #a5a8b5;
 }
 
 /* 검색 드롭다운 */
@@ -381,14 +392,13 @@ body.dark .stat-card {
 }
 .search-dropdown {
     position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + 6px);
     left: 0; right: 0;
     background: #fff;
-    border-radius: 14px;
-    box-shadow: 0 8px 28px rgba(0,0,0,0.16);
+    border-radius: 12px;
+    box-shadow: rgb(224,226,232) 0px 0px 0px 1px, 0 8px 24px rgba(0,0,0,0.10);
     overflow: hidden;
     z-index: 500;
-    border: 1px solid rgba(0,0,0,0.07);
     animation: dropFadeMain 0.14s ease;
     min-width: 220px;
 }
@@ -407,7 +417,7 @@ body.dark .stat-card {
     border-bottom: 1px solid rgba(0,0,0,0.04);
 }
 .search-drop-row:last-child { border-bottom: none; }
-.search-drop-row:hover { background: rgba(91,94,247,0.07); }
+.search-drop-row:hover { background: rgba(91, 118, 254,0.07); }
 .search-drop-avatar {
     width: 32px; height: 32px;
     border-radius: 50%;
@@ -417,7 +427,7 @@ body.dark .stat-card {
 }
 .search-drop-info { flex: 1; min-width: 0; }
 .search-drop-name { font-size: 13px; font-weight: bold; color: #222; }
-.search-drop-name mark { background: rgba(91,94,247,0.15); color: #5b5ef7; border-radius: 3px; padding: 0 2px; }
+.search-drop-name mark { background: rgba(91, 118, 254,0.15); color: #5b76fe; border-radius: 3px; padding: 0 2px; }
 .search-drop-sub { font-size: 11px; color: #aaa; margin-top: 1px; }
 .search-drop-empty { padding: 14px; text-align: center; color: #bbb; font-size: 13px; }
 
@@ -460,9 +470,9 @@ body.dark {
 }
 
 body.dark .topbar {
-    background: linear-gradient(135deg, #0f0f26 0%, #131330 100%);
-    border-bottom: 2px solid rgba(91, 94, 247, 0.5);
-    box-shadow: 0 4px 28px rgba(0,0,0,0.7), 0 1px 0 rgba(91,94,247,0.2);
+    background: #16162a;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    box-shadow: none;
 }
 
 body.dark .welcome,
@@ -489,7 +499,7 @@ body.dark .search-icon { color: #aaa; }
 body.dark .search-input { color: #eee; }
 body.dark .search-dropdown { background: #1e2035; border-color: rgba(255,255,255,0.08); }
 body.dark .search-drop-row { border-bottom-color: rgba(255,255,255,0.05); }
-body.dark .search-drop-row:hover { background: rgba(91,94,247,0.1); }
+body.dark .search-drop-row:hover { background: rgba(91, 118, 254,0.1); }
 body.dark .search-drop-name { color: #e0e0e0; }
 body.dark .search-drop-empty { color: #555; }
 
@@ -500,7 +510,7 @@ body.dark .dm-input-area   { border-color: rgba(255,255,255,0.07); }
 body.dark .dm-panel-title  { color: #ddd; }
 body.dark .dm-panel-body   { background: #1e1e32; }
 body.dark .dm-conv-row     { border-bottom-color: rgba(255,255,255,0.05); }
-body.dark .dm-conv-row:hover { background: rgba(91,94,247,0.08); }
+body.dark .dm-conv-row:hover { background: rgba(91, 118, 254,0.08); }
 body.dark .dm-conv-name    { color: #ddd; }
 body.dark .dm-conv-last    { color: #666; }
 body.dark .dm-msg-other .dm-msg-bubble { background: #2d2d4a; color: #ddd; }
@@ -510,7 +520,7 @@ body.dark .dm-input {
     color: #e0e0e0;
 }
 body.dark .dm-input::placeholder { color: #555; }
-body.dark .dm-input:focus  { border-color: #9b9ef7; }
+body.dark .dm-input:focus  { border-color: #8a9ffe; }
 body.dark .dm-empty,
 body.dark .dm-loading      { color: #555; }
 
@@ -535,8 +545,7 @@ body.dark .footer {
     justify-content: center;
     min-height: calc(100vh - 60px);
     gap: 12px;
-    color: white;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    color: #1c1c1e;
     padding-bottom: 60px;
     position: relative;
     z-index: 1;
@@ -552,9 +561,9 @@ body.dark .footer {
 
 /* 푸터 */
 .footer {
-    background: rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(8px);
-    color: rgba(255, 255, 255, 0.75);
+    background: #ffffff;
+    border-top: 1px solid rgb(224,226,232);
+    color: #555a6a;
     padding: 24px 40px;
     display: flex;
     justify-content: center;
@@ -571,26 +580,30 @@ body.dark .footer {
 }
 
 .footer-label {
-    font-weight: bold;
-    color: rgba(255, 255, 255, 0.5);
+    font-weight: 600;
+    color: #a5a8b5;
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .footer-link {
-    color: rgba(255, 255, 255, 0.85);
+    color: #555a6a;
     text-decoration: none;
-    font-weight: bold;
-    transition: color 0.2s;
+    font-weight: 500;
+    transition: color 0.15s;
 }
 
 .footer-link:hover {
-    color: rgb(143, 203, 255);
+    color: #5b76fe;
 }
 
 .content h1 {
-    font-size: 32px;
+    font-size: 40px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 700;
+    letter-spacing: -1px;
+    color: #1c1c1e;
 }
 
 /* 타이핑 커서 */
@@ -663,22 +676,22 @@ body.dark .footer {
     align-items: center;
     justify-content: center;
     gap: 12px;
-    background: rgba(255, 255, 255, 0.92);
+    background: #ffffff;
     padding: 36px 48px;
-    border-radius: 24px;
+    border-radius: 12px;
     text-decoration: none;
-    color: #333;
-    font-weight: bold;
-    font-size: 17px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-    transition: transform 0.2s, box-shadow 0.2s;
+    color: #1c1c1e;
+    font-weight: 600;
+    font-size: 16px;
+    box-shadow: rgb(224,226,232) 0px 0px 0px 1px;
+    transition: transform 0.18s, box-shadow 0.18s;
     position: relative;
     cursor: pointer;
 }
 
 .home-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 14px 36px rgba(0,0,0,0.18);
+    transform: translateY(-3px);
+    box-shadow: rgb(224,226,232) 0px 0px 0px 1px, 0 8px 24px rgba(0,0,0,0.09);
 }
 
 .home-card-icon {
@@ -687,28 +700,31 @@ body.dark .footer {
     align-items: center;
     justify-content: center;
 }
-.home-card-icon .li svg { width: 44px; height: 44px; stroke: #5b5ef7; }
+.home-card-icon .li svg { width: 44px; height: 44px; stroke: #5b76fe; }
 
 .home-card-label {
-    font-size: 16px;
-    color: #444;
-    font-weight: 700;
+    font-size: 15px;
+    color: #555a6a;
+    font-weight: 600;
     display: flex;
     align-items: center;
     gap: 6px;
+    font-family: 'Noto Sans', sans-serif;
 }
 
 .home-card-stat .home-card-label .li svg { width: 15px; height: 15px; }
 
 .home-card-num {
-    font-size: 42px;
-    font-weight: 900;
-    color: #5b5ef7;
+    font-size: 38px;
+    font-weight: 700;
+    color: #5b76fe;
     min-width: 60px;
     min-height: 52px;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-family: 'DM Sans', sans-serif;
+    letter-spacing: -1px;
 }
 
 body.dark .home-card {
@@ -716,8 +732,8 @@ body.dark .home-card {
     color: #ddd;
 }
 body.dark .home-card-label { color: #ccc; }
-body.dark .home-card-num { color: #9b9ef7; }
-body.dark .home-card-icon .li svg { stroke: #9b9ef7; }
+body.dark .home-card-num { color: #8a9ffe; }
+body.dark .home-card-icon .li svg { stroke: #8a9ffe; }
 
 /* ── 플로팅 배경 카드 ── */
 .floating-bg {
@@ -813,7 +829,7 @@ body.dark .floating-bg { display: none; }
 /* ── 관리자 링크 버튼 ── */
 .admin-link-btn {
     text-decoration: none;
-    background: linear-gradient(135deg, #5b5ef7, #9b9ef7);
+    background: linear-gradient(135deg, #5b76fe, #8a9ffe);
     color: #fff;
     padding: 7px 14px;
     border-radius: 10px;
@@ -924,7 +940,7 @@ body.dark .floating-bg { display: none; }
     transition: background 0.12s;
     border-bottom: 1px solid rgba(0,0,0,0.04);
 }
-.dm-conv-row:hover { background: rgba(91,94,247,0.06); }
+.dm-conv-row:hover { background: rgba(91, 118, 254,0.06); }
 .dm-conv-avatar {
     width: 44px; height: 44px;
     border-radius: 50%;
@@ -939,7 +955,7 @@ body.dark .floating-bg { display: none; }
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .dm-conv-unread {
-    background: #5b5ef7;
+    background: #5b76fe;
     color: #fff;
     border-radius: 999px;
     font-size: 11px;
@@ -966,7 +982,7 @@ body.dark .floating-bg { display: none; }
     line-height: 1.45;
     word-break: break-word;
 }
-.dm-msg-mine  .dm-msg-bubble { background: #5b5ef7; color: #fff; border-bottom-right-radius: 5px; }
+.dm-msg-mine  .dm-msg-bubble { background: #5b76fe; color: #fff; border-bottom-right-radius: 5px; }
 .dm-msg-other .dm-msg-bubble { background: #f1f3f5; color: #222; border-bottom-left-radius: 5px; }
 .dm-msg-time { font-size: 10px; color: #ccc; margin-top: 3px; padding: 0 4px; }
 .dm-msg + .dm-msg { margin-top: 3px; }
@@ -992,11 +1008,11 @@ body.dark .floating-bg { display: none; }
     outline: none;
     font-family: inherit;
 }
-.dm-input:focus { border-color: #5b5ef7; }
+.dm-input:focus { border-color: #5b76fe; }
 .dm-send-btn {
     width: 38px; height: 38px;
     border-radius: 50%;
-    background: #5b5ef7;
+    background: #5b76fe;
     color: #fff;
     border: none;
     font-size: 18px;

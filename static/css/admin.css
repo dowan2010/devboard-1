@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600;700&display=swap');
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 /* ── Lucide 아이콘 ── */
@@ -36,10 +37,10 @@
 .member-dm-hint .li svg { width: 13px; height: 13px; }
 
 body {
-    font-family: sans-serif;
-    background: #f4f6fb;
+    font-family: 'Noto Sans', sans-serif;
+    color: #1c1c1e;
+    background: #f8f9fb;
     min-height: 100vh;
-    color: #222;
 }
 
 /* ── 상단바 ── */
@@ -51,7 +52,7 @@ body {
     padding: 0 32px;
     height: 60px;
     min-height: 60px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+    box-shadow: rgb(224,226,232) 0px 0px 0px 1px;
     position: sticky;
     top: 0;
     z-index: 200;
@@ -68,12 +69,12 @@ body {
     text-decoration: none;
     font-size: 17px;
     font-weight: 900;
-    color: #5b5ef7;
+    color: #5b76fe;
     letter-spacing: -0.3px;
     white-space: nowrap;
 }
 .admin-badge {
-    background: linear-gradient(135deg, #5b5ef7, #9b9ef7);
+    background: linear-gradient(135deg, #5b76fe, #8a9ffe);
     color: #fff;
     font-size: 12px;
     font-weight: bold;
@@ -97,15 +98,15 @@ body {
 .admin-back-btn {
     text-decoration: none;
     font-size: 13px;
-    color: #5b5ef7;
+    color: #5b76fe;
     font-weight: bold;
     padding: 6px 14px;
-    border: 1.5px solid #5b5ef7;
+    border: 1.5px solid #5b76fe;
     border-radius: 8px;
     transition: background 0.2s;
     white-space: nowrap;
 }
-.admin-back-btn:hover { background: rgba(91,94,247,0.08); }
+.admin-back-btn:hover { background: rgba(91, 118, 254,0.08); }
 .admin-logout-btn {
     text-decoration: none;
     background: rgb(143, 203, 255);
@@ -156,7 +157,7 @@ body {
     border-bottom: 1px solid #f0f0f0; cursor: default;
 }
 .notif-row:hover { background: rgba(0,0,0,0.02); }
-.notif-unread { background: rgba(91,94,247,0.05); }
+.notif-unread { background: rgba(91, 118, 254,0.05); }
 .notif-icon { font-size: 18px; flex-shrink: 0; }
 .notif-msg { font-size: 13px; color: #333; line-height: 1.4; }
 .notif-time { font-size: 11px; color: #aaa; margin-top: 3px; }
@@ -206,10 +207,10 @@ body {
 .dm-panel-close:hover { background: rgba(0,0,0,0.07); }
 .dm-back-btn {
     background: none; border: none; font-size: 18px;
-    cursor: pointer; color: #5b5ef7; padding: 4px 8px; border-radius: 8px;
+    cursor: pointer; color: #5b76fe; padding: 4px 8px; border-radius: 8px;
     font-weight: bold; transition: background 0.2s;
 }
-.dm-back-btn:hover { background: rgba(91,94,247,0.08); }
+.dm-back-btn:hover { background: rgba(91, 118, 254,0.08); }
 .dm-back-btn.hidden { display: none; }
 .dm-panel-body {
     flex: 1; overflow-y: auto; padding: 12px 14px;
@@ -225,7 +226,7 @@ body {
     padding: 10px 12px; border-radius: 12px;
     cursor: pointer; transition: background 0.15s;
 }
-.dm-conv-row:hover { background: rgba(91,94,247,0.07); }
+.dm-conv-row:hover { background: rgba(91, 118, 254,0.07); }
 .dm-conv-avatar {
     width: 40px; height: 40px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
@@ -236,7 +237,7 @@ body {
 .dm-conv-preview { font-size: 12px; color: #aaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dm-conv-meta { font-size: 11px; color: #ccc; flex-shrink: 0; }
 .dm-conv-unread {
-    background: #5b5ef7; color: #fff; font-size: 10px; font-weight: bold;
+    background: #5b76fe; color: #fff; font-size: 10px; font-weight: bold;
     min-width: 18px; height: 18px; border-radius: 999px;
     display: flex; align-items: center; justify-content: center; padding: 0 4px;
 }
@@ -251,7 +252,7 @@ body {
     max-width: 220px; padding: 9px 14px; border-radius: 18px;
     font-size: 14px; line-height: 1.45; word-break: break-word;
 }
-.dm-msg-mine  .dm-msg-bubble { background: #5b5ef7; color: #fff; border-bottom-right-radius: 4px; }
+.dm-msg-mine  .dm-msg-bubble { background: #5b76fe; color: #fff; border-bottom-right-radius: 4px; }
 .dm-msg-other .dm-msg-bubble { background: #f3f3f3; color: #222; border-bottom-left-radius: 4px; }
 .dm-msg-time {
     font-size: 10px; color: #ccc; margin-top: 3px; padding: 0 4px;
@@ -281,9 +282,9 @@ body {
     padding: 9px 16px; font-size: 14px; outline: none;
     font-family: inherit; transition: border-color 0.2s;
 }
-.dm-input:focus { border-color: #5b5ef7; }
+.dm-input:focus { border-color: #5b76fe; }
 .dm-send-btn {
-    background: #5b5ef7; color: #fff; border: none;
+    background: #5b76fe; color: #fff; border: none;
     width: 36px; height: 36px; border-radius: 50%;
     font-size: 16px; cursor: pointer; display: flex;
     align-items: center; justify-content: center;
@@ -323,7 +324,7 @@ body {
 .member-card-locked { font-size: 12px; color: #e05555; margin-top: 4px; }
 .member-dm-hint {
     font-size: 12px;
-    color: #5b5ef7;
+    color: #5b76fe;
     opacity: 0;
     transition: opacity 0.2s;
 }
@@ -331,28 +332,28 @@ body {
 
 /* ── 다크모드 전체 ── */
 body.dark { background: #1a1a2e; color: #e0e0e0; }
-body.dark .admin-topbar { background: linear-gradient(135deg, #0f0f26 0%, #131330 100%); border-bottom: 2px solid rgba(91, 94, 247, 0.5); box-shadow: 0 4px 28px rgba(0,0,0,0.7), 0 1px 0 rgba(91,94,247,0.2); }
-body.dark .admin-logo { color: #9b9ef7; }
+body.dark .admin-topbar { background: linear-gradient(135deg, #0f0f26 0%, #131330 100%); border-bottom: 2px solid rgba(91, 118, 254, 0.5); box-shadow: 0 4px 28px rgba(0,0,0,0.7), 0 1px 0 rgba(91, 118, 254,0.2); }
+body.dark .admin-logo { color: #8a9ffe; }
 body.dark .admin-badge { background: linear-gradient(135deg, #4a4dd4, #7b7ef0); }
 body.dark .admin-user { color: #aaa; }
-body.dark .admin-back-btn { color: #9b9ef7; border-color: #9b9ef7; }
-body.dark .admin-back-btn:hover { background: rgba(91,94,247,0.15); }
+body.dark .admin-back-btn { color: #8a9ffe; border-color: #8a9ffe; }
+body.dark .admin-back-btn:hover { background: rgba(91, 118, 254,0.15); }
 body.dark .admin-logout-btn { background: rgba(143,203,255,0.2); color: #aad4f5; }
 body.dark .admin-sidebar { background: rgba(30,30,50,0.9); border-color: rgba(255,255,255,0.07); }
 body.dark .sidebar-item { color: #aaa; }
-body.dark .sidebar-item:hover { background: rgba(91,94,247,0.12); color: #9b9ef7; }
-body.dark .sidebar-item.active { background: rgba(91,94,247,0.18); color: #9b9ef7; }
+body.dark .sidebar-item:hover { background: rgba(91, 118, 254,0.12); color: #8a9ffe; }
+body.dark .sidebar-item.active { background: rgba(91, 118, 254,0.18); color: #8a9ffe; }
 body.dark .admin-main { background: #1a1a2e; }
 body.dark .tab-title { color: #ddd; }
 body.dark .tab-sub { color: #888; }
-body.dark .btn-primary { background: #5b5ef7; }
+body.dark .btn-primary { background: #5b76fe; }
 body.dark .notice-list, body.dark .user-table-wrap { background: transparent; }
 body.dark .notice-item { background: rgba(35,35,60,0.9); border-color: rgba(255,255,255,0.07); }
 body.dark .notice-item-title { color: #ddd; }
 body.dark .notice-item-content { color: #999; }
 body.dark .notice-item-meta { color: #666; }
 body.dark .user-table { background: rgba(35,35,60,0.9); border-color: rgba(255,255,255,0.07); }
-body.dark .user-table th { background: rgba(91,94,247,0.12); color: #bbb; border-color: rgba(255,255,255,0.07); }
+body.dark .user-table th { background: rgba(91, 118, 254,0.12); color: #bbb; border-color: rgba(255,255,255,0.07); }
 body.dark .user-table td { color: #ccc; border-color: rgba(255,255,255,0.05); }
 body.dark .user-table tr:hover td { background: rgba(255,255,255,0.03); }
 body.dark .user-nickname { color: #e8e8ff; }
@@ -362,7 +363,7 @@ body.dark .notif-dropdown { background: #23233a; border-color: rgba(255,255,255,
 body.dark .notif-row { border-color: rgba(255,255,255,0.05); }
 body.dark .notif-msg { color: #ccc; }
 body.dark .notif-time { color: #666; }
-body.dark .notif-unread { background: rgba(91,94,247,0.1); }
+body.dark .notif-unread { background: rgba(91, 118, 254,0.1); }
 body.dark .modal { background: #23233a; border-color: rgba(255,255,255,0.08); }
 body.dark .modal-header { border-color: rgba(255,255,255,0.08); }
 body.dark .modal-header h2 { color: #e0e0e0; }
@@ -375,7 +376,7 @@ body.dark .admin-loading { color: #666; }
 body.dark .member-card { background: rgba(35,35,60,0.9); box-shadow: 0 2px 12px rgba(0,0,0,0.2); }
 body.dark .member-card-name { color: #e0e0e0; }
 body.dark .member-card-id { color: #666; }
-body.dark .member-dm-hint { color: #9b9ef7; }
+body.dark .member-dm-hint { color: #8a9ffe; }
 
 /* ── 레이아웃 ── */
 .admin-layout {
@@ -408,12 +409,12 @@ body.dark .member-dm-hint { color: #9b9ef7; }
     text-align: left;
     width: 100%;
 }
-.sidebar-item:hover { background: rgba(91,94,247,0.07); color: #5b5ef7; }
-.sidebar-item.active { background: rgba(91,94,247,0.12); color: #5b5ef7; }
+.sidebar-item:hover { background: rgba(91, 118, 254,0.07); color: #5b76fe; }
+.sidebar-item.active { background: rgba(91, 118, 254,0.12); color: #5b76fe; }
 .sidebar-icon { font-size: 16px; }
 .sidebar-count {
     margin-left: auto;
-    background: #5b5ef7;
+    background: #5b76fe;
     color: #fff;
     font-size: 11px;
     font-weight: bold;
@@ -439,7 +440,7 @@ body.dark .member-dm-hint { color: #9b9ef7; }
 
 /* ── 버튼 ── */
 .btn-primary {
-    background: #5b5ef7;
+    background: #5b76fe;
     color: #fff;
     border: none;
     padding: 10px 20px;
@@ -554,8 +555,8 @@ body.dark .member-dm-hint { color: #9b9ef7; }
 }
 .notice-pin-badge {
     display: inline-block;
-    background: rgba(91,94,247,0.1);
-    color: #5b5ef7;
+    background: rgba(91, 118, 254,0.1);
+    color: #5b76fe;
     font-size: 11px;
     font-weight: bold;
     padding: 2px 8px;
@@ -581,7 +582,7 @@ body.dark .member-dm-hint { color: #9b9ef7; }
     outline: none;
     width: 220px;
 }
-.user-search-input:focus { border-color: #5b5ef7; }
+.user-search-input:focus { border-color: #5b76fe; }
 
 /* ── 회원 테이블 ── */
 .user-table-wrap {
@@ -613,7 +614,7 @@ body.dark .member-dm-hint { color: #9b9ef7; }
     vertical-align: middle;
 }
 .user-table tr:last-child td { border-bottom: none; }
-.user-table tr:hover td { background: rgba(91,94,247,0.03); }
+.user-table tr:hover td { background: rgba(91, 118, 254,0.03); }
 
 .user-nickname { font-weight: bold; color: #222; }
 .user-id-cell { color: #aaa; font-size: 12px; }
@@ -646,7 +647,7 @@ body.dark .member-dm-hint { color: #9b9ef7; }
     padding: 3px 10px;
     border-radius: 999px;
 }
-.admin-badge-cell.is-admin { background: rgba(91,94,247,0.12); color: #5b5ef7; }
+.admin-badge-cell.is-admin { background: rgba(91, 118, 254,0.12); color: #5b76fe; }
 .admin-badge-cell.not-admin { background: #f5f5f5; color: #bbb; }
 .action-btns { display: flex; gap: 5px; flex-wrap: wrap; }
 .self-label {
@@ -657,8 +658,8 @@ body.dark .member-dm-hint { color: #9b9ef7; }
 }
 .self-tag {
     display: inline-block;
-    background: rgba(91,94,247,0.12);
-    color: #5b5ef7;
+    background: rgba(91, 118, 254,0.12);
+    color: #5b76fe;
     font-size: 10px;
     font-weight: 700;
     padding: 1px 5px;
@@ -739,7 +740,7 @@ body.dark .member-dm-hint { color: #9b9ef7; }
     resize: vertical;
 }
 .form-group input[type="text"]:focus,
-.form-group textarea:focus { border-color: #5b5ef7; }
+.form-group textarea:focus { border-color: #5b76fe; }
 .pin-group { display: flex; align-items: center; }
 .checkbox-label {
     display: flex !important;
@@ -752,7 +753,7 @@ body.dark .member-dm-hint { color: #9b9ef7; }
     width: 16px;
     height: 16px;
     cursor: pointer;
-    accent-color: #5b5ef7;
+    accent-color: #5b76fe;
 }
 .form-error {
     color: #e53935;
@@ -812,9 +813,9 @@ body.dark .dm-panel-header { border-color: rgba(255,255,255,0.07); }
 body.dark .dm-panel-title { color: #e0e0e0; }
 body.dark .dm-panel-close { color: #666; }
 body.dark .dm-panel-close:hover { background: rgba(255,255,255,0.07); }
-body.dark .dm-back-btn { color: #9b9ef7; }
-body.dark .dm-back-btn:hover { background: rgba(91,94,247,0.15); }
-body.dark .dm-conv-row:hover { background: rgba(91,94,247,0.1); }
+body.dark .dm-back-btn { color: #8a9ffe; }
+body.dark .dm-back-btn:hover { background: rgba(91, 118, 254,0.15); }
+body.dark .dm-conv-row:hover { background: rgba(91, 118, 254,0.1); }
 body.dark .dm-conv-name { color: #ddd; }
 body.dark .dm-conv-preview { color: #666; }
 body.dark .dm-conv-meta { color: #555; }
@@ -823,7 +824,7 @@ body.dark .dm-date-divider { color: #555; }
 body.dark .dm-date-divider::before, body.dark .dm-date-divider::after { background: rgba(255,255,255,0.07); }
 body.dark .dm-input-area { border-color: rgba(255,255,255,0.07); }
 body.dark .dm-input { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); color: #e0e0e0; }
-body.dark .dm-input:focus { border-color: #9b9ef7; }
+body.dark .dm-input:focus { border-color: #8a9ffe; }
 body.dark .dm-empty { color: #555; }
 
 /* ── 다크모드 topbar 아이콘 버튼 ── */
@@ -836,4 +837,4 @@ body.dark .admin-logo { color: #ccc; }
 body.dark .dm-topbar-btn:hover,
 body.dark .bell-btn:hover,
 body.dark .darkmode-btn:hover { color: #fff; }
-body.dark .dm-send-btn { background: rgba(91,94,247,0.85); color: #fff; }
+body.dark .dm-send-btn { background: rgba(91, 118, 254,0.85); color: #fff; }

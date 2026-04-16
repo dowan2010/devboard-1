@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600;700&display=swap');
+
 body {
     background: #ffffff;
     margin: 0;
@@ -7,39 +9,70 @@ body {
     justify-content: center;
     align-items: center;
     box-sizing: border-box;
+    font-family: 'Noto Sans', sans-serif;
+    color: #1c1c1e;
 }
 
 .login {
-    background-color: white;
+    background-color: #ffffff;
     padding: 40px;
     border-radius: 20px;
-    width: 330px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    width: 360px;
+    box-shadow: rgb(224,226,232) 0px 0px 0px 1px, 0 8px 24px rgba(0,0,0,0.07);
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
 }
 
-box {
-    align-items: flex-start;
-    justify-content: center;
-    align-items: center;
+.login h2, .login h3 {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: #1c1c1e;
 }
 
 input {
-    border-radius: 20px;
-    padding: 20px;
+    border-radius: 8px;
+    padding: 12px 16px;
     font-size: 15px;
+    border: 1px solid #e9eaef;
+    background: #ffffff;
+    outline: none;
+    font-family: 'Noto Sans', sans-serif;
+    color: #1c1c1e;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+input:focus {
+    border-color: #5b76fe;
+    box-shadow: 0 0 0 3px rgba(91, 118, 254, 0.12);
+}
+
+input::placeholder {
+    color: #a5a8b5;
 }
 
 button {
     text-align: center;
-    border-radius: 13px;
-    min-height: 50px;
-    padding: center;
-    background-color: rgb(143, 203, 255);
-    font-size: 19px;
-    font-family: "배달의민족 주아";
+    border-radius: 8px;
+    min-height: 44px;
+    padding: 10px 20px;
+    background-color: #5b76fe;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    letter-spacing: 0.1px;
+}
+
+button:hover {
+    background-color: #2a41b6;
+    transform: translateY(-1px);
 }
 
 .first-login {
@@ -49,20 +82,21 @@ button {
     gap: 10px;
     margin-top: 4px;
     font-size: 13px;
+    color: #555a6a;
 }
 
 .first-login-font {
     text-decoration: none;
-    color: #555;
-    transition: color 0.2s;
+    color: #555a6a;
+    transition: color 0.15s;
 }
 
 .first-login-font:hover {
-    color: #1a73e8;
+    color: #5b76fe;
 }
 
 .divider {
-    color: #ccc;
+    color: #c7cad5;
     font-size: 13px;
 }
 
@@ -84,23 +118,24 @@ button {
     right: 15px;
     cursor: pointer;
     font-size: 18px;
-    color: #aaa;
+    color: #a5a8b5;
     user-select: none;
 }
 
 .toggle-pw:hover {
-    color: #555;
+    color: #555a6a;
 }
 
 /* 이메일 고정 도메인 */
 .email-wrapper {
     display: flex;
     align-items: center;
-    border: 2px solid black;
-    border-radius: 20px;
+    border: 1px solid #e9eaef;
+    border-radius: 8px;
     overflow: hidden;
     background-color: white;
-    min-height: 55px;
+    min-height: 44px;
+    transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .email-wrapper input {
@@ -108,20 +143,22 @@ button {
     border: none;
     outline: none;
     border-radius: 0;
-    padding: 20px;
+    padding: 12px 16px;
     font-size: 15px;
     min-width: 0;
+    box-shadow: none;
 }
 
 .email-domain {
     padding: 0 15px 0 0;
     font-size: 14px;
-    color: #555;
+    color: #555a6a;
     white-space: nowrap;
 }
 
 .email-wrapper:focus-within {
-    border-color: #1a73e8;
+    border-color: #5b76fe;
+    box-shadow: 0 0 0 3px rgba(91, 118, 254, 0.12);
 }
 
 /* 로그인 성공 토스트 팝업 */
@@ -130,18 +167,44 @@ button {
     top: -80px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: #4caf50;
+    background-color: #00b473;
     color: white;
-    padding: 14px 28px;
-    border-radius: 12px;
+    padding: 12px 24px;
+    border-radius: 8px;
     font-size: 15px;
-    font-weight: bold;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     transition: top 0.4s ease;
     z-index: 9999;
     white-space: nowrap;
+    font-family: 'DM Sans', sans-serif;
 }
 
 .toast.show {
     top: 30px;
+}
+
+/* Google 로그인 버튼 */
+.google-login-btn, .google-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: #ffffff;
+    color: #1c1c1e;
+    border: 1px solid #c7cad5;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    text-decoration: none;
+    font-family: 'DM Sans', sans-serif;
+    min-height: 44px;
+}
+
+.google-login-btn:hover, .google-btn:hover {
+    background: #f5f5f7;
+    border-color: #a5a8b5;
 }
