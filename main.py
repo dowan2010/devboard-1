@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, Response
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 import time
 import os
 import json
+from collections import defaultdict
 
 load_dotenv()
 
@@ -338,6 +339,116 @@ class StaticCacheMiddleware:
         await self.app(scope, receive, send_with_cache)
 
 
+class AntiScrapingMiddleware:
+    """
+    무단 스크래핑 차단 미들웨어
+    1. 알려진 봇/스크래퍼 User-Agent 차단 (403)
+    2. User-Agent 없는 요청 차단 (403)
+    3. IP별 속도 제한: 60초 내 120회 초과 시 5분 차단 (429)
+    """
+
+    # 차단할 User-Agent 키워드 (소문자 포함 여부로 판단)
+    _BAD_UA: frozenset = frozenset([
+        # 스크래핑 라이브러리
+        "scrapy", "python-requests", "python-httpx", "python-urllib",
+        "curl/", "wget/", "httpx/", "aiohttp/", "go-http-client",
+        "java/", "ruby", "libwww-perl",
+        # 악성/상업 봇
+        "ahrefsbot", "semrushbot", "dotbot", "mj12bot", "majestic",
+        "blexbot", "petalbot", "bytespider", "gptbot", "claudebot",
+        "anthropic-ai", "ccbot", "ia_archiver",
+        # 보안 스캐너
+        "nikto", "sqlmap", "nmap", "masscan", "zgrab", "dirbuster",
+        "gobuster", "nuclei", "wfuzz",
+    ])
+
+    _WINDOW   = 60    # 초 단위 측정 창
+    _MAX_REQS = 120   # 창 내 최대 요청 수
+    _BLOCK    = 300   # 초과 시 차단 지속 시간 (5분)
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+        self._hits: dict[str, list[float]] = defaultdict(list)
+        self._blocked: dict[str, float] = {}   # ip -> unblock_timestamp
+
+    # Render는 리버스 프록시를 사용하므로 X-Forwarded-For 우선
+    def _get_ip(self, scope: Scope) -> str:
+        headers = dict(scope.get("headers", []))
+        xff = headers.get(b"x-forwarded-for", b"").decode("utf-8", errors="ignore")
+        if xff:
+            return xff.split(",")[0].strip()
+        client = scope.get("client")
+        return client[0] if client else "unknown"
+
+    async def _deny(self, scope: Scope, receive: Receive, send: Send,
+                    status: int, msg: str) -> None:
+        is_api = scope.get("path", "").startswith("/api/")
+        if is_api:
+            body = json.dumps({"error": msg}).encode()
+            ctype = b"application/json"
+        else:
+            body = msg.encode()
+            ctype = b"text/plain; charset=utf-8"
+        await send({
+            "type": "http.response.start",
+            "status": status,
+            "headers": [
+                (b"content-type", ctype),
+                (b"content-length", str(len(body)).encode()),
+            ],
+        })
+        await send({"type": "http.response.body", "body": body})
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        path = scope.get("path", "")
+        # 정적 파일·robots.txt 는 스킵
+        if path.startswith("/static") or path == "/robots.txt":
+            await self.app(scope, receive, send)
+            return
+
+        headers = dict(scope.get("headers", []))
+        ua = headers.get(b"user-agent", b"").decode("utf-8", errors="ignore").lower()
+
+        # ── 1. User-Agent 없는 요청 차단 ──
+        if not ua:
+            await self._deny(scope, receive, send, 403, "Access denied")
+            return
+
+        # ── 2. 알려진 봇 User-Agent 차단 ──
+        if any(kw in ua for kw in self._BAD_UA):
+            await self._deny(scope, receive, send, 403, "Access denied")
+            return
+
+        # ── 3. IP 속도 제한 ──
+        ip = self._get_ip(scope)
+        now = time.time()
+
+        # 차단 중인 IP 확인
+        if ip in self._blocked:
+            if now < self._blocked[ip]:
+                await self._deny(scope, receive, send, 429, "Too many requests. Try again later.")
+                return
+            else:
+                del self._blocked[ip]
+                self._hits.pop(ip, None)
+
+        # 오래된 기록 제거 후 현재 요청 추가
+        hits = self._hits[ip]
+        hits[:] = [t for t in hits if now - t < self._WINDOW]
+        hits.append(now)
+
+        if len(hits) > self._MAX_REQS:
+            self._blocked[ip] = now + self._BLOCK
+            await self._deny(scope, receive, send, 429, "Too many requests. Try again later.")
+            return
+
+        await self.app(scope, receive, send)
+
+
 class EnforceLockMiddleware:
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
@@ -368,11 +479,12 @@ class EnforceLockMiddleware:
 
 # 미들웨어 등록 순서: add_middleware는 LIFO(후입선출)로 스택에 쌓임
 # → 마지막에 추가한 것이 가장 바깥(outermost)에서 실행
-# SessionMiddleware를 마지막에 추가 → 가장 먼저 실행 → scope["session"] 세팅 후 EnforceLock 실행
-app.add_middleware(StaticCacheMiddleware)
-app.add_middleware(EnforceLockMiddleware)
+# 실행 순서: SessionMiddleware → AntiScraping → EnforceLock → StaticCache → App
+app.add_middleware(StaticCacheMiddleware)       # 4. 정적 파일 캐시 헤더
+app.add_middleware(EnforceLockMiddleware)       # 3. 잠금 계정 차단
+app.add_middleware(AntiScrapingMiddleware)      # 2. 봇·속도 제한
 app.add_middleware(
-    SessionMiddleware,
+    SessionMiddleware,                          # 1. 세션 세팅 (가장 먼저 실행)
     secret_key=os.environ.get('SECRET_KEY', 'dev-secret-key'),
     same_site='lax',
     https_only=False,
@@ -381,6 +493,36 @@ app.add_middleware(
 
 
 # ─────────────── 기본 라우트 ───────────────
+@app.get('/robots.txt', include_in_schema=False)
+def robots_txt():
+    """검색엔진 크롤링 제한 + AI 학습 봇 차단"""
+    content = (
+        "User-agent: *\n"
+        "Crawl-delay: 10\n"
+        "Disallow: /api/\n"
+        "Disallow: /admin\n"
+        "Disallow: /auth/\n"
+        "Allow: /\n"
+        "\n"
+        "# AI 학습 봇 전면 차단\n"
+        "User-agent: GPTBot\n"
+        "Disallow: /\n"
+        "\n"
+        "User-agent: ClaudeBot\n"
+        "Disallow: /\n"
+        "\n"
+        "User-agent: anthropic-ai\n"
+        "Disallow: /\n"
+        "\n"
+        "User-agent: CCBot\n"
+        "Disallow: /\n"
+        "\n"
+        "User-agent: Google-Extended\n"
+        "Disallow: /\n"
+    )
+    return Response(content=content, media_type="text/plain")
+
+
 @app.get('/')
 def index():
     return RedirectResponse('/main', status_code=302)
