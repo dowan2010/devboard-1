@@ -412,7 +412,7 @@ class AntiScrapingMiddleware:
 
         path = scope.get("path", "")
         # 정적 파일·robots.txt·Search Console 인증 파일 스킵
-        if path.startswith("/static") or path in ("/robots.txt", "/google7866b874e02a98da.html"):
+        if path.startswith("/static") or path in ("/robots.txt", "/google7866b874e02a98da.html", "/googlea56c82e2482833c8.html"):
             await self.app(scope, receive, send)
             return
 
@@ -513,6 +513,14 @@ app.add_middleware(
 def google_site_verification():
     return Response(
         content="google-site-verification: google7866b874e02a98da.html",
+        media_type="text/html"
+    )
+
+
+@app.get('/googlea56c82e2482833c8.html', include_in_schema=False)
+def google_site_verification2():
+    return Response(
+        content="google-site-verification: googlea56c82e2482833c8.html",
         media_type="text/html"
     )
 
