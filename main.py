@@ -493,6 +493,14 @@ app.add_middleware(
 
 
 # ─────────────── 기본 라우트 ───────────────
+@app.get('/google7866b874e02a98da.html', include_in_schema=False)
+def google_site_verification():
+    return Response(
+        content="google-site-verification: google7866b874e02a98da.html",
+        media_type="text/html"
+    )
+
+
 @app.get('/robots.txt', include_in_schema=False)
 def robots_txt():
     """검색엔진 크롤링 제한 + AI 학습 봇 차단"""
