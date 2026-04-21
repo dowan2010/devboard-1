@@ -371,6 +371,12 @@ class AntiScrapingMiddleware:
         self._hits: dict[str, list[float]] = defaultdict(list)
         self._blocked: dict[str, float] = {}   # ip -> unblock_timestamp
 
+    # Render 내부 헬스체크 IP (차단 제외)
+    _WHITELIST_IPS: frozenset = frozenset(["127.0.0.1", "::1", "0.0.0.0"])
+
+    # 허용할 정상 봇 UA 키워드 (검색엔진 크롤러)
+    _GOOD_UA: frozenset = frozenset(["googlebot", "bingbot", "yeti", "naverbot"])
+
     # Render는 리버스 프록시를 사용하므로 X-Forwarded-For 우선
     def _get_ip(self, scope: Scope) -> str:
         headers = dict(scope.get("headers", []))
@@ -405,26 +411,36 @@ class AntiScrapingMiddleware:
             return
 
         path = scope.get("path", "")
-        # 정적 파일·robots.txt 는 스킵
-        if path.startswith("/static") or path == "/robots.txt":
+        # 정적 파일·robots.txt·Search Console 인증 파일 스킵
+        if path.startswith("/static") or path in ("/robots.txt", "/google7866b874e02a98da.html"):
+            await self.app(scope, receive, send)
+            return
+
+        # ── 0. Render 헬스체크 (localhost) 무조건 통과 ──
+        ip = self._get_ip(scope)
+        if ip in self._WHITELIST_IPS:
             await self.app(scope, receive, send)
             return
 
         headers = dict(scope.get("headers", []))
         ua = headers.get(b"user-agent", b"").decode("utf-8", errors="ignore").lower()
 
-        # ── 1. User-Agent 없는 요청 차단 ──
+        # ── 1. 정상 검색엔진 봇은 통과 (Googlebot 등) ──
+        if any(kw in ua for kw in self._GOOD_UA):
+            await self.app(scope, receive, send)
+            return
+
+        # ── 2. User-Agent 없는 요청 차단 ──
         if not ua:
             await self._deny(scope, receive, send, 403, "Access denied")
             return
 
-        # ── 2. 알려진 봇 User-Agent 차단 ──
+        # ── 3. 알려진 봇 User-Agent 차단 ──
         if any(kw in ua for kw in self._BAD_UA):
             await self._deny(scope, receive, send, 403, "Access denied")
             return
 
-        # ── 3. IP 속도 제한 ──
-        ip = self._get_ip(scope)
+        # ── 4. IP 속도 제한 ──
         now = time.time()
 
         # 차단 중인 IP 확인
